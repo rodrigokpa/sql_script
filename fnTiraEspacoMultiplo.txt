@@ -1,0 +1,12 @@
+CREATE FUNCTION dbo.fnTiraEspacoMultiplo (@CAMPO varchar(max))
+
+RETURNS VARCHAR(1024)
+
+AS
+
+BEGIN
+	WHILE CHARINDEX('  ',@CAMPO) > 0
+		SET @CAMPO = REPLACE(@CAMPO,'  ',' ')
+	RETURN LTRIM(RTRIM(@CAMPO))
+END
+

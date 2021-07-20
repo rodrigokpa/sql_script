@@ -1,0 +1,23 @@
+CREATE FUNCTION [dbo].FN_QTDE_OCORRENCIA_STR 
+(
+	@TEXTO VARCHAR(MAX),
+	@CARACTERE VARCHAR(10)
+)
+/********************************************************
+	FUNÇÃO VERIFICAR A QUANTIDADE DE OCORRENCIA DE UMA STRING
+	SERVE PARA CONTAR DELIMITADORES EM ARQUIVOS DE TEXTO
+	RODRIGO -02/04/2013
+
+********************************************************/
+RETURNS TINYINT
+AS
+BEGIN
+	DECLARE @QTDE_OCORR AS TINYINT
+
+	SET @QTDE_OCORR = ( len (@TEXTO) - len( replace(@TEXTO,@CARACTERE,'')  ) )
+
+
+	RETURN @QTDE_OCORR
+END
+
+

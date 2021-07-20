@@ -1,0 +1,75 @@
+SPLIT COLUNA XML
+RODRIGO EDUARDO PINTO DE SOUZA
+Qua, 10/01/2018 08:38
+SITE ORIGINAL:
+
+https://raresql.com/2015/08/22/sql-server-how-to-split-one-column-into-multiple-columns/
+
+
+
+--split de coluna-
+
+drop table UOL_Work..empregados
+
+create table UOL_Work..empregados
+(
+id int,
+nome varchar (100)
+
+)
+
+insert into UOL_Work..empregados
+select
+1,
+'RODRIGO EDUARDO PINTO'
+
+
+
+insert into UOL_Work..empregados
+select
+2,
+'THULIO RAMALHO KFURI'
+
+
+insert into UOL_Work..empregados
+select
+3,
+'SAMER KFURI'
+
+
+--
+
+DECLARE @DELIMITER VARCHAR(10)
+SET @DELIMITER = ' ' --PODE SER QUALQUER DELIMITADOR
+
+;WITH CTE AS
+(
+SELECT
+ID,
+nome,
+CAST('<M>'+REPLACE(NOME,@DELIMITER,'</M><M>')+'</M>' AS XML) AS NOME_XML
+
+FROM
+UOL_Work..empregados
+
+)
+SELECT 
+ID,
+NOME,
+NOME_XML,
+NOME_XML.value('/M[1]','VARCHAR(50)') AS PRIMEIRO_NOME,
+NOME_XML.value('/M[2]','VARCHAR(50)') AS NOME_MEIO,
+NOME_XML.value('/M[3]','VARCHAR(50)') AS ULTIMO_NOME
+ FROM CTE
+
+
+
+
+
+
+
+
+SQL SERVER – How to split one column into multiple columns
+raresql.com
+Earlier, I have written a blog post about how to split a single row data into multiple rows using XQuery. Today, I came across a situation where I had to split a ...
+

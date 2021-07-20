@@ -1,0 +1,27 @@
+CREATE function fnDeparaMes(@MesPortugues varchar(20))
+returns varchar(20)
+as
+begin
+	declare @MesIngles varchar(20)
+	declare @mes varchar(3)
+
+	set @mes = substring(@MesPortugues,patindex('%-%',@MesPortugues)+1,3)
+
+	if (@mes = 'FEV')
+		set @MesIngles = replace(@MesPortugues,@mes,'FEB')
+	else if (@mes = 'ABR')
+		set @MesIngles = replace(@MesPortugues,@mes,'APR')
+	else if (@mes = 'MAI')
+		set @MesIngles = replace(@MesPortugues,@mes,'MAY')
+	else if (@mes = 'AGO')
+		set @MesIngles = replace(@MesPortugues,@mes,'AUG')
+	else if (@mes = 'SET')
+		set @MesIngles = replace(@MesPortugues,@mes,'SEP')
+	else if (@mes = 'OUT')
+		set @MesIngles = replace(@MesPortugues,@mes,'OCT')
+	else if (@mes = 'DEZ')
+		set @MesIngles = replace(@MesPortugues,@mes,'DEC')
+	else 
+		set @MesIngles = @MesPortugues
+	return @MesIngles
+end

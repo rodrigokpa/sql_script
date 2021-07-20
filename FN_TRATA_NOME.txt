@@ -1,0 +1,41 @@
+CREATE FUNCTION dbo.FN_TRATA_NOME
+
+(
+    @TEXTO VARCHAR(250)
+)
+
+RETURNS VARCHAR(250)
+
+/********************************************************
+	FUNÇÃO PARA PADRONIZAR E RETIRAR ACENTUAÇÃO DE NOMES
+	-CIDADE, BAIRRO, NOMES PRÓPRIOS
+	RODRIGO - 18/03/2013
+
+********************************************************/
+AS
+
+BEGIN
+ DECLARE @TEXTO_FORMATADO VARCHAR(250)
+	IF @TEXTO IS NULL
+		SET @TEXTO_FORMATADO = NULL
+	ELSE
+		BEGIN	 
+
+			-- O trecho abaixo possibilita que caracteres como "º" ou "ª"   -- sejam convertidos para "o" ou "a", respectivamente
+
+			SET @TEXTO_FORMATADO = LTRIM(RTRIM(UPPER(@TEXTO)))
+
+				COLLATE sql_latin1_general_cp1250_ci_as		 
+
+			-- O trecho abaixo remove acentos    
+
+			SET @TEXTO_FORMATADO = @TEXTO_FORMATADO
+
+				COLLATE sql_latin1_general_cp1251_ci_as
+
+		END
+    RETURN @TEXTO_FORMATADO
+
+ 
+END
+

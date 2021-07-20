@@ -1,0 +1,407 @@
+/*
+-------------------------------------------------------------------------------------------
+--Dados de criação
+-------------------------------------------------------------------------------------------
+	Autor:Marcos Minoru Pereira
+	Ultima Atualização:20/02/2013
+-------------------------------------------------------------------------------------------
+--Parametros:
+-------------------------------------------------------------------------------------------
+	@idMonitoramento:
+	1 - Espaço livre nos HDs
+	2 - Espaço dos arquivos MDF e LDF e quanto está sendo utilizado
+	3 - Retorno dos processos que não são internos no SQL SERVER
+		,além dos dados que são apresentados no SP_WHO2 é apresentado o comando executado 
+		e a duração do comando até o momento
+	@infoSistema:
+	0 - Não mostra bancos/processos de sistema (OPÇÃO DEFAULT)
+	1 - Exibe informações de bancos/processos do sistema.
+	OBS:
+		Na opção 1 do @idMonitoramento não faz diferença entre passar @infoSistema
+		com 0 ou 1.
+
+-------------------------------------------------------------------------------------------
+--Exemplos de execução
+-------------------------------------------------------------------------------------------
+	EXEC dbo.PR_MONITORAMENTO 1
+	EXEC dbo.PR_MONITORAMENTO 2
+	EXEC dbo.PR_MONITORAMENTO 3
+	EXEC dbo.PR_MONITORAMENTO 2,0
+	EXEC dbo.PR_MONITORAMENTO 2,1
+	EXEC dbo.PR_MONITORAMENTO 3,0
+	EXEC dbo.PR_MONITORAMENTO 3,1
+-------------------------------------------------------------------------------------------
+*/
+CREATE PROCEDURE [dbo].[PR_MONITORAMENTO](
+	@idMonitoramento	INTEGER = 3
+	,@infoSistema		BIT = 0
+)
+AS
+BEGIN
+	SET NOCOUNT ON
+	
+	DECLARE
+		@dataInicio		DATETIME
+		,@sql			VARCHAR(MAX)
+		,@valor1		VARCHAR(MAX)
+		,@valor2		VARCHAR(MAX)
+		,@valor3		VARCHAR(MAX)
+
+	/*
+		Inicio das tabelas referentes ao @idMonitoramento = 1
+	*/
+	DECLARE @TSpaceDriver TABLE(
+		unidade CHAR(1)
+		,MBFree NUMERIC(18,2)
+		,MBMDF	NUMERIC(18,2)
+		,MBLDF	NUMERIC(18,2)
+	)
+
+	/*
+		Inicio das tabelas referentes ao @idMonitoramento = 2
+	*/
+	DECLARE @DataBases TABLE(
+		name		VARCHAR(200)
+		,DB_SIZE	VARCHAR(200)
+		,Owner		VARCHAR(200)
+		,dbid		INT
+		,CREATED	VARCHAR(200)
+		,status		VARCHAR(1000)
+		,compatibility_level INT
+	)
+	
+	DECLARE @unallocated TABLE(
+		dataBase_Name	VARCHAR(200)
+		,data_space_id	tinyint
+		,unallocated	NUMERIC(18,2)
+	)
+
+	DECLARE @TSpaceFile TABLE(
+		id						INT		IDENTITY(1,1)
+		,nome					VARCHAR(200)
+		,fileID					TINYINT
+		,[fileName]				VARCHAR(5000)
+		,[fileGroup]			VARCHAR(500)
+		,[Size]					VARCHAR(500)
+		,[unallocated]			NUMERIC(18,2)
+		,[unallocatedPercent]		NUMERIC(18,2)
+		,[maxSize]					VARCHAR(500)
+		,[growth]					VARCHAR(500)
+		,usage						VARCHAR(200)
+		,DataBase_NAME				VARCHAR(200)
+		,data_space_id				TINYINT
+	)
+
+	DECLARE @SQLPERF TABLE(
+		id				INT		IDENTITY(1,1)
+		,DataBase_NAME	VARCHAR(200)
+		,logSize		NUMERIC(18,2)
+		,logUsed		NUMERIC(18,2)
+		,status			TINYINT
+		UNIQUE CLUSTERED (DataBase_NAME)
+	)
+
+	/*
+		Inicio das tabelas referentes ao @idMonitoramento = 4
+	*/
+	DECLARE @DBCC_INPUTBUFFER TABLE(
+		strEvent	VARCHAR(MAX)
+		,strParameter VARCHAR(MAX)
+		,strCommand	VARCHAR(MAX)
+	)	
+
+	DECLARE @PROCESSO TABLE(
+		SPID					INT
+		,login					VARCHAR(200)
+		,hostName				VARCHAR(200)
+		,blkBy					VARCHAR(200)
+		,DBName					VARCHAR(200)
+		,Command				VARCHAR(MAX)
+		,strCommand				VARCHAR(MAX)
+		,strStatement			VARCHAR(MAX)
+		,strParameter			VARCHAR(MAX)
+		,tempoExecucao			VARCHAR(200)
+		,CPUTime				BIGINT
+		,DiskIO					BIGINT
+		,Threads				INT
+		,percentualConclusao	NUMERIC(18,2)
+		,plan_handle			varbinary(8000)
+		,statement_start_offset BIGINT
+		,statement_end_offset	BIGINT
+	)
+
+	DECLARE @WHO2 TABLE(
+		SPID			INT
+		,status			VARCHAR(200)
+		,login			VARCHAR(200)
+		,hostName		VARCHAR(200)
+		,blkBy			VARCHAR(200)
+		,DBName			VARCHAR(200)
+		,Command		VARCHAR(MAX)
+		,CPUTime		BIGINT
+		,DiskIO			BIGINT
+		,lastBatch		VARCHAR(200)
+		,programName	VARCHAR(200)
+		,SPID2			INT
+		,requestID		INT
+		,strCommand		VARCHAR(MAX)
+		,strParameter	VARCHAR(MAX)
+	)
+	--Monitoramento 1 = Espaço em disco Online
+	IF @idMonitoramento = 1
+	BEGIN		
+		INSERT INTO @TSpaceDriver(unidade,MBFree)
+		EXEC xp_fixeddrives --Retorna o espaço livre por unidade do servidor
+		SELECT 
+			unidade
+			,CONVERT(NUMERIC(18,2),(MBFree/1024)) AS espacoLivreDiscoGB
+		FROM @TSpaceDriver
+		ORDER BY unidade
+	END
+	--Monitoramento 2 = Espaço dos nossos bancos
+	ELSE IF @idMonitoramento = 2
+	BEGIN
+		--Inserir os bancos que serão levantadas as informações de espaço em disco
+		INSERT INTO @DataBases
+		EXEC SP_HELPDB	
+		--Ontem espaço em disco usado em cada LDF
+		INSERT INTO @SQLPERF
+		EXEC('DBCC SQLPERF(logSpace) WITH NO_INFOMSGS')
+
+		DECLARE CR_EXEC CURSOR FOR 
+		SELECT [name] FROM @DataBases WHERE (@infoSistema = 0 AND [name] not in ('master', 'msdb', 'model','tempdb')) OR (@infoSistema = 1)
+
+		OPEN CR_EXEC
+		FETCH NEXT FROM CR_EXEC INTO @valor1
+		
+		--Cursor criado para retornar de cada database as informações dos files e espaço não alocado
+		WHILE @@FETCH_STATUS = 0
+		BEGIN
+			INSERT INTO @TSpaceFile(nome,fileID,[fileName],[fileGroup],[Size],[maxSize],[growth],usage)
+			EXEC('
+			USE '+@valor1+'
+			EXEC SP_HELPFILE
+			')
+			
+			UPDATE @TSpaceFile
+			SET DataBase_NAME = @valor1
+			WHERE DataBase_NAME IS NULL
+			
+			UPDATE a
+			SET a.data_space_id = b.data_space_id
+			FROM @TSpaceFile a
+			INNER JOIN sys.filegroups b
+			ON a.fileGroup = b.name
+
+			--Query retirada da procedure SP_SPACEUSED
+			INSERT INTO @unallocated
+			EXEC('
+			USE '+@valor1+'
+			SELECT 
+				database_name = db_name()
+				,data_space_id
+				,ltrim(str((case when dbsize >= reservedpages then
+					(convert (dec (15,2),dbsize) - convert (dec (15,2),reservedpages)) 
+					* 8192 / 1048576 else 0 end),15,2)) AS espacoAlocado	
+			FROM (
+				select 
+					data_space_id,
+					sum(a.total_pages) AS reservedpages
+				from sys.partitions p join sys.allocation_units a on p.partition_id = a.container_id
+				left join sys.internal_tables it on p.object_id = it.object_id
+				GROUP BY data_space_id
+			) a
+			INNER JOIN (
+				select 
+					groupid,sum(convert(bigint,case when status & 64 = 0 then size else 0 end)) AS dbsize
+				from dbo.sysfiles
+				WHERE groupid != 0
+				GROUP BY groupid
+			) b
+			ON a.data_space_id = b.groupid
+			')
+						
+			FETCH NEXT FROM CR_EXEC INTO @valor1
+		END
+
+		CLOSE CR_EXEC
+		DEALLOCATE CR_EXEC
+		
+		UPDATE a
+		SET a.unallocatedPercent = b.logUsed
+		FROM @TSpaceFile a
+		INNER JOIN @SQLPERF b
+		ON a.DataBase_NAME = b.DataBase_NAME
+		WHERE a.fileID = 2
+		
+		UPDATE a
+		SET a.unallocated = (b.unallocated / 1024)
+		FROM @TSpaceFile a
+		INNER JOIN @unallocated b
+		ON a.DataBase_NAME = b.DataBase_NAME
+		AND a.data_space_id = b.data_space_id
+		WHERE a.fileID != 2
+		
+		UPDATE @TSpaceFile
+		SET [SIZE] = CONVERT(NUMERIC(18,2),(CONVERT(NUMERIC(18,2),REPLACE([Size],'KB','')) / 1024 / 1024))
+		
+		UPDATE @TSpaceFile
+		SET 
+			unallocatedPercent =  
+				CASE 
+					WHEN unallocatedPercent IS NULL AND [SIZE] = '0.00' THEN 0
+					WHEN unallocatedPercent IS NULL AND [SIZE] != '0.00' THEN 
+						 ((unallocated / CONVERT(NUMERIC(18,2),[SIZE]))  * 100)
+					ELSE 100 - unallocatedPercent
+				END
+			,unallocated=  
+				CASE 
+					WHEN unallocated IS NULL THEN 
+						[SIZE] - (unallocatedPercent * CONVERT(NUMERIC(18,2),[SIZE]) / 100) 
+					ELSE unallocated 
+				END
+		
+		INSERT INTO @TSpaceFile(nome,fileID,[fileName],[fileGroup],[Size],[maxSize],[growth],usage,unallocated,unallocatedPercent)
+		SELECT 
+		'TOTAL',0,'',NULL,SUM(CONVERT(NUMERIC(18,2),[SIZE])),NULL,NULL,NULL,SUM(unallocated),(SUM(unallocated)/SUM(CONVERT(NUMERIC(18,2),[SIZE])) * 100) FROM @TSpaceFile
+		
+		SELECT 
+			nome AS nomeArquivo
+			,[SIZE] AS espacoAlocadoEmDiscoGB
+			,CONVERT(VARCHAR(200),(100 - unallocatedPercent)) + '%' AS [percentualConsumido]
+			,unallocated AS EspacoLogicoLivreGB
+			,CONVERT(VARCHAR(200),unallocatedPercent) + '%' AS [percentualLivre]
+			,FileName AS caminhoArquivo
+		FROM @TSpaceFile
+		ORDER BY ID		
+	END
+	ELSE IF @idMonitoramento = 3
+	BEGIN
+		INSERT INTO @WHO2(
+			SPID
+			,status
+			,login
+			,hostName
+			,blkBy
+			,DBName
+			,Command
+			,CPUTime
+			,DiskIO
+			,lastBatch
+			,programName
+			,SPID2
+			,requestID
+		)
+		EXEC SP_WHO2 ACTIVE
+		
+		DECLARE CR_EXEC CURSOR FOR 
+		SELECT SPID FROM @WHO2 GROUP BY SPID
+
+		OPEN CR_EXEC
+		FETCH NEXT FROM CR_EXEC INTO @valor1
+
+		/*Cursor utilizado para retornar o commando que está sendo executado*/
+		WHILE @@FETCH_STATUS = 0
+		BEGIN
+			DELETE @DBCC_INPUTBUFFER
+			
+			SET @SQL = 'DBCC INPUTBUFFER('+@valor1+') WITH NO_INFOMSGS'
+			INSERT INTO @DBCC_INPUTBUFFER
+			EXEC(@SQL)
+
+			SELECT 
+				@valor2 = strCommand
+				,@valor3 = strParameter
+			FROM @DBCC_INPUTBUFFER
+			
+			UPDATE @WHO2
+			SET 
+				strCommand = @valor2
+				,strParameter = @valor3
+			WHERE SPID = @valor1
+			
+			FETCH NEXT FROM CR_EXEC INTO @valor1
+		END
+
+		CLOSE CR_EXEC
+		DEALLOCATE CR_EXEC
+
+		INSERT INTO @PROCESSO(SPID,hostName,blkBy,DBName,Command,strCommand,strStatement,strParameter,percentualConclusao,tempoExecucao,CPUTime,DiskIO,Threads,plan_handle,statement_start_offset,statement_end_offset)
+		SELECT
+			a.SPID
+			,a.HostName
+			,'  .'
+			,a.DBName
+			,a.Command
+			,a.strCommand
+			,''--StrStatement
+			,a.strParameter
+			,b.percent_complete
+			,dbo.fnReturnSSToHHMMSSS_Monitoramento(DATEDIFF(ss,b.start_time,GETDATE())) AS TempoExecutando
+			,SUM(a.CPUTime)	AS CPUTime
+			,SUM(a.DiskIO)	AS DiskIO
+			,COUNT(1) AS Threads
+			,b.plan_handle
+			,b.statement_start_offset
+			,b.statement_end_offset
+		FROM @WHO2 a
+		INNER JOIN sys.dm_exec_requests b ON a.SPID = b.session_id		
+		GROUP BY a.SPID,a.HostName,a.DBName,a.Command,a.strCommand,a.strParameter,b.percent_complete
+		,b.start_time,programName,b.plan_handle,b.statement_start_offset,b.statement_end_offset
+
+		UPDATE b
+		SET strStatement = SUBSTRING(detail.text, (b.statement_start_offset/2)+1,((CASE b.statement_end_offset WHEN -1 THEN DATALENGTH(detail.text) ELSE b.statement_end_offset END - b.statement_start_offset)/2) + 1)
+		FROM @PROCESSO b
+		CROSS APPLY sys.dm_exec_sql_text (b.plan_handle) detail
+
+		UPDATE a
+		SET a.Login = b.Login
+		FROM @PROCESSO a
+		INNER JOIN @WHO2 b
+		ON a.SPID = b.SPID
+		WHERE b.Login !=''
+
+		UPDATE a
+		SET a.BlkBy = b.BlkBy
+		FROM @PROCESSO a
+		INNER JOIN (
+			SELECT 
+				SPID
+				,MAX(BlkBy) AS BlkBy
+			FROM @WHO2
+			WHERE SPID != BlkBy AND BlkBy != '  .'
+			GROUP BY SPID
+		) b
+		ON a.SPID = b.SPID
+
+		SELECT 
+			SPID
+			,login
+			,hostName
+			,blkBy
+			,DBName
+			,Command
+			,strCommand
+			,CASE WHEN REPLACE(strCommand,'()','') = REPLACE(strStatement,'()','') THEN '' ELSE strStatement END AS strStatement
+			,tempoExecucao
+			,dbo.fnFormataValor_Monitoramento(CPUTime) AS CPUTime
+			,dbo.fnFormataValor_Monitoramento(DiskIO) AS DiskIO
+			,Threads
+			,CASE WHEN percentualConclusao = '0.0' THEN '' ELSE CONVERT(VARCHAR(200),percentualConclusao) + '%'  END AS percentualConclusao
+		FROM @PROCESSO
+		WHERE 
+			(@infoSistema = 0 AND hostName != '  .' AND SPID != @@SPID)--Não retorna processos de sistema
+			OR (@infoSistema = 1 AND SPID != @@SPID)--Retorna processos de sistema
+		ORDER BY CASE WHEN DBName IS NULL THEN 0 WHEN DBName IN ('master', 'msdb', 'model','tempdb') THEN 1 ELSE 2 END,DBName,SPID
+
+	END
+	ELSE
+	BEGIN
+		SELECT 'Operação inválida' AS Erro
+	END
+	SET NOCOUNT OFF
+END
+
+
+
+

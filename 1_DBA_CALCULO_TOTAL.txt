@@ -1,0 +1,62 @@
+CREATE PROCEDURE PR_CALCULO_TOTAL  
+AS  
+BEGIN  
+  
+Declare @threshold decimal(3,2) = .85;  
+   
+Create Table #identityStatus  
+(  
+      Database_Name     varchar(128)  
+    , Table_Name        varchar(128)  
+    , Column_Name       varchar(128)  
+    , Data_Type         varchar(128)  
+    , Last_Value        bigint  
+    , Max_Value         bigint  
+    , Last_Rows         bigint
+);  
+   
+Execute sp_msforeachdb '  
+    Use [?];  
+    Insert Into #identityStatus  
+    Select ''?'' As [database_name]  
+        , Object_Name(id.object_id, DB_ID(''?'')) As [table_name]  
+        , id.name As [column_name]  
+        , t.name As [data_type]  
+        , Cast(id.last_value As bigint) As [last_value]  
+        , Case   
+            When t.name = ''tinyint''   Then 255   
+            When t.name = ''smallint''  Then 32767   
+            When t.name = ''int''       Then 2147483647   
+            When t.name = ''bigint''    Then 9223372036854775807  
+          End As [max_value],
+            (select 2147483647 - Cast(id.last_value As bigint)) as [Last_Rows]
+          
+    From sys.identity_columns As id  
+    Join sys.types As t  
+        On id.system_type_id = t.system_type_id  
+    Where id.last_value Is Not Null' ;  
+    
+Select Database_Name as [Banco de Dados]  
+    , Table_Name as [Tabela]  
+    , Column_Name as [Coluna]  
+    , Data_Type as [Tipo de Dado]  
+    , Last_Value as [Último Valor]  
+    , Case   
+        When last_value < 0 Then 100  
+        Else (1 - Cast(last_value As float(4)) / max_value) * 100   
+      End As [Percentual Restante]  
+    , [Last_Rows] as [Linhas Restantes]       
+    , Case   
+        When Cast(last_value As float(4)) / max_value >= @threshold  
+            Then 'Atenção: Aproximando do limite máximo'  
+        Else 'Ok'  
+        End As [id_status]  
+From #identityStatus  
+WHERE table_name IN ('tb_GLO_Transfers','tb_GLO_Withdrawals','tb_GLO_Sales','tb_GLO_Transactions')  
+Order By [Percentual Restante];  
+  
+Drop Table #identityStatus;  
+  
+END
+
+

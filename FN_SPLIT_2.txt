@@ -1,0 +1,69 @@
+------------------------------------------------------------------------------------------------------
+
+Text
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CREATE FUNCTION [dbo].[FN_SPLIT_2] 
+
+( @Texto VARCHAR(MAX) , 
+@Separador CHAR(1) ) 
+
+RETURNS @Tabela_Final TABLE 
+   ( [1] VARCHAR(MAX) , [2] VARCHAR(MAX) , [3] VARCHAR(MAX) , [4] VARCHAR(MAX) , [5] VARCHAR(MAX) , 
+      [6] VARCHAR(MAX) , [7] VARCHAR(MAX) , [8] VARCHAR(MAX) , [9] VARCHAR(MAX) , [10] VARCHAR(MAX) , 
+      [11] VARCHAR(MAX) , [12] VARCHAR(MAX) , [13] VARCHAR(MAX) , [14] VARCHAR(MAX) , [15] VARCHAR(MAX) , 
+      [16] VARCHAR(MAX) , [17] VARCHAR(MAX) , [18] VARCHAR(MAX) , [19] VARCHAR(MAX) , [20] VARCHAR(MAX) , 
+      [21] VARCHAR(MAX) , [22] VARCHAR(MAX) , [23] VARCHAR(MAX) , [24] VARCHAR(MAX) , [25] VARCHAR(MAX) , 
+      [26] VARCHAR(MAX) , [27] VARCHAR(MAX) , [28] VARCHAR(MAX) , [29] VARCHAR(MAX) , [30] VARCHAR(MAX) , 
+      [31] VARCHAR(MAX) , [32] VARCHAR(MAX) , [33] VARCHAR(MAX) , [34] VARCHAR(MAX) , [35] VARCHAR(MAX) , 
+      [36] VARCHAR(MAX) , [37] VARCHAR(MAX) , [38] VARCHAR(MAX) , [39] VARCHAR(MAX) , [40] VARCHAR(MAX) , 
+      [41] VARCHAR(MAX) , [42] VARCHAR(MAX) , [43] VARCHAR(MAX) , [44] VARCHAR(MAX) , [45] VARCHAR(MAX) , 
+      [46] VARCHAR(MAX) , [47] VARCHAR(MAX) , [48] VARCHAR(MAX) , [49] VARCHAR(MAX) , [50] VARCHAR(MAX) , 
+      [51] VARCHAR(MAX) , [52] VARCHAR(MAX) , [53] VARCHAR(MAX) , [54] VARCHAR(MAX) , [55] VARCHAR(MAX) , 
+      [56] VARCHAR(MAX) , [57] VARCHAR(MAX) , [58] VARCHAR(MAX) , [59] VARCHAR(MAX) , [60] VARCHAR(MAX) , 
+      [61] VARCHAR(MAX) , [62] VARCHAR(MAX) , [63] VARCHAR(MAX) , [64] VARCHAR(MAX) , [65] VARCHAR(MAX) , 
+      [66] VARCHAR(MAX) , [67] VARCHAR(MAX) , [68] VARCHAR(MAX) , [69] VARCHAR(MAX) , [70] VARCHAR(MAX) , 
+      [71] VARCHAR(MAX) , [72] VARCHAR(MAX) , [73] VARCHAR(MAX) , [74] VARCHAR(MAX) , [75] VARCHAR(MAX) , 
+      [76] VARCHAR(MAX) , [77] VARCHAR(MAX) , [78] VARCHAR(MAX) , [79] VARCHAR(MAX) , [80] VARCHAR(MAX) , 
+      [81] VARCHAR(MAX) , [82] VARCHAR(MAX) , [83] VARCHAR(MAX) , [84] VARCHAR(MAX) , [85] VARCHAR(MAX) , 
+      [86] VARCHAR(MAX) , [87] VARCHAR(MAX) , [88] VARCHAR(MAX) , [89] VARCHAR(MAX) , [90] VARCHAR(MAX) , 
+      [91] VARCHAR(MAX) , [92] VARCHAR(MAX) , [93] VARCHAR(MAX) , [94] VARCHAR(MAX) , [95] VARCHAR(MAX) , 
+      [96] VARCHAR(MAX) , [97] VARCHAR(MAX) , [98] VARCHAR(MAX) , [99] VARCHAR(MAX) , [100] VARCHAR(MAX) ) 
+
+AS 
+BEGIN 
+   DECLARE @Tabela_Interna TABLE 
+      ( ID INT IDENTITY(1,1) , 
+      Valor VARCHAR(MAX) );
+
+   SET @Texto = REPLACE( '<Registro><Linha>' + REPLACE(@Texto, @Separador , '</Linha><Linha>' ) + '</Linha></Registro>'  , '&' , '&amp;' ); 
+
+   WITH ResXML (PalavraXML) AS 
+      (SELECT CAST( @Texto AS XML ))
+
+   INSERT INTO @Tabela_Interna ( Valor ) 
+      SELECT Palavas.Registro.value('(./text())[1]','nvarchar(max)') As Palavra 
+         FROM ResXML 
+         CROSS APPLY PalavraXML.nodes('./Registro/Linha') As Palavas(Registro);
+
+INSERT INTO @Tabela_Final 
+   SELECT 
+      [1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],
+      [21],[22],[23],[24],[25],[26],[27],[28],[29],[30],[31],[32],[33],[34],[35],[36],[37],[38],[39],[40],
+      [41],[42],[43],[44],[45],[46],[47],[48],[49],[50],[51],[52],[53],[54],[55],[56],[57],[58],[59],[60],
+      [61],[62],[63],[64],[65],[66],[67],[68],[69],[70],[71],[72],[73],[74],[75],[76],[77],[78],[79],[80],
+      [81],[82],[83],[84],[85],[86],[87],[88],[89],[90],[91],[92],[93],[94],[95],[96],[97],[98],[99],[100]
+   FROM ( SELECT id , valor
+            FROM @Tabela_Interna 
+         ) AS QRY
+   PIVOT ( MIN( valor ) FOR ID IN ( [1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],
+                                    [16],[17],[18],[19],[20],[21],[22],[23],[24],[25],[26],[27],[28],[29],[30],
+                                    [31],[32],[33],[34],[35],[36],[37],[38],[39],[40],[41],[42],[43],[44],[45],
+                                    [46],[47],[48],[49],[50],[51],[52],[53],[54],[55],[56],[57],[58],[59],[60],
+                                    [61],[62],[63],[64],[65],[66],[67],[68],[69],[70],[71],[72],[73],[74],[75],
+                                    [76],[77],[78],[79],[80],[81],[82],[83],[84],[85],[86],[87],[88],[89],[90],
+                                    [91],[92],[93],[94],[95],[96],[97],[98],[99],[100])) P
+
+
+   RETURN 
+END 
+

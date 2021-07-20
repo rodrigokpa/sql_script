@@ -1,0 +1,1 @@
+sp_rename 'mds3.J25050_Ofertas.total_clientes', 'total_cliente', 'COLUMN';

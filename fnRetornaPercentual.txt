@@ -1,0 +1,10 @@
+CREATE FUNCTION dbo.fnRetornaPercentual(@VALOR1 int, @VALOR2 int)
+
+RETURNS NUMERIC(18,2)
+
+AS
+
+BEGIN
+	RETURN cast((@valor1*1.00 /  nullif(@valor2,0)*1.00) * 100 as decimal(18,2))
+END
+

@@ -1,0 +1,72 @@
+Text
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/*
+Criação: 2010-07-06
+Por: Ricardo Duarte de Oliveira
+Descrição: ROTINA PARA DECOMPOR UM NÚMERO DE 1 A 1023. MOSTRADA TODAS AS POTÊNCIAS DE 2 EXISTENTE NO PARÂMETRO DA ROTINA.
+PARA ESTA ROTINA TRABLHAR COM NÚMEROS MAIORES DE 1023 PRECISAMOS AUMENTAR O VALOR DO PRIMEIRO LAÇO QUE INCLUI LINHAS NA VARIÁVEL TABELA.
+O USO DESTA FUNÇÃO SERVIRÁ PARA RESTAURAR OS VALORES QUE COMPÕE O PARÂMETRO IGUAL AO COMANDO SP_ADD_JOBSCHEDULE QUE TEM UM PARÂMETRO NUMÉRICO @FREQ_INTERVAL, ONDE TEMOS OS VALORES:
+
+1 = Sunday
+2 = Monday
+4 = Tuesday
+8 = Wednesday
+16 = Thursday
+32 = Friday
+64 = Saturday
+*/
+CREATE FUNCTION [dbo].[FN_DECOMPOR] 
+
+( @NUMERO AS INT )
+
+RETURNS @RETORNO TABLE ( VALOR INT )
+
+AS
+BEGIN 
+
+   DECLARE @AUXILIAR AS INT 
+
+   DECLARE @TABELA TABLE 
+      ( VALOR INT , 
+      USADO INT 
+      )
+
+   SET @AUXILIAR = 0
+
+-- CASO PRECISE DE NÚMEROS MAIORES QUE 1023 AUMENTAR O LIMTE DO WHILE
+   WHILE @AUXILIAR < 10 BEGIN
+
+      INSERT INTO @TABELA 
+         SELECT POWER(2, @AUXILIAR ) , 0 
+
+      SET @AUXILIAR = @AUXILIAR + 1
+
+   END
+
+   SELECT @AUXILIAR = 0 
+
+   WHILE @NUMERO > 0 BEGIN 
+
+      SELECT @AUXILIAR = MAX( VALOR ) 
+         FROM @TABELA 
+         WHERE USADO = 0 
+            AND VALOR <= @NUMERO 
+
+      UPDATE @TABELA 
+            SET USADO  = 1
+         WHERE VALOR = @AUXILIAR 
+
+      SELECT @NUMERO = @NUMERO - @AUXILIAR 
+
+   END
+
+   INSERT @RETORNO 
+      SELECT VALOR 
+         FROM @TABELA 
+         WHERE USADO = 1 
+
+   RETURN
+
+END
+
+

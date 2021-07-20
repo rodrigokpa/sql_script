@@ -1,0 +1,380 @@
+DBCC SHRINKdatabase (demanda);
+
+
+-- Backup Database to .bak File
+DECLARE @fileName VARCHAR(90);
+DECLARE @db_name VARCHAR(20);
+DECLARE @fileDate VARCHAR(20);
+
+SET @fileName = 'E:\Dashboard\BKP\Data\'; -- change to the relevant path
+SET @db_name = 'demanda';     -- change to the relevant database name
+SET @fileDate = CONVERT(VARCHAR(20), GETDATE(),112);
+SET @fileName = @fileName + @db_name + '_' + RTRIM(@fileDate) + '.bak';
+
+BACKUP DATABASE @db_name TO DISK = @fileName; 
+
+
+-------------------------------------------------------------------------------------
+
+
+DBCC SHRINKdatabase (FinanceiroCapex);
+
+-- Backup Database to .bak File
+DECLARE @fileName VARCHAR(90);
+DECLARE @db_name VARCHAR(20);
+DECLARE @fileDate VARCHAR(20);
+
+SET @fileName = 'E:\Dashboard\BKP\Data\'; -- change to the relevant path
+SET @db_name = 'FinanceiroCapex';     -- change to the relevant database name
+SET @fileDate = CONVERT(VARCHAR(20), GETDATE(),112);
+SET @fileName = @fileName + @db_name + '_' + RTRIM(@fileDate) + '.bak';
+
+BACKUP DATABASE @db_name TO DISK = @fileName; 
+
+
+-----------------------------------------------------------------------
+
+DBCC SHRINKdatabase (FinanceiroOpex);
+
+-- Backup Database to .bak File
+DECLARE @fileName VARCHAR(90);
+DECLARE @db_name VARCHAR(20);
+DECLARE @fileDate VARCHAR(20);
+
+SET @fileName = 'E:\Dashboard\BKP\Data\'; -- change to the relevant path
+SET @db_name = 'FinanceiroOpex';     -- change to the relevant database name
+SET @fileDate = CONVERT(VARCHAR(20), GETDATE(),112);
+SET @fileName = @fileName + @db_name + '_' + RTRIM(@fileDate) + '.bak';
+
+BACKUP DATABASE @db_name TO DISK = @fileName; 
+
+
+
+-----------------------------------------------------------------------------------
+
+DBCC SHRINKdatabase (NumerosTI);
+
+
+-- Backup Database to .bak File
+DECLARE @fileName VARCHAR(90);
+DECLARE @db_name VARCHAR(20);
+DECLARE @fileDate VARCHAR(20);
+
+SET @fileName = 'E:\Dashboard\BKP\Data\'; -- change to the relevant path
+SET @db_name = 'NumerosTI';     -- change to the relevant database name
+SET @fileDate = CONVERT(VARCHAR(20), GETDATE(),112);
+SET @fileName = @fileName + @db_name + '_' + RTRIM(@fileDate) + '.bak';
+
+BACKUP DATABASE @db_name TO DISK = @fileName; 
+
+---------------------------------------------------------------------------
+
+
+DBCC SHRINKdatabase (AdmDashboard);
+
+-- Backup Database to .bak File
+DECLARE @fileName VARCHAR(90);
+DECLARE @db_name VARCHAR(20);
+DECLARE @fileDate VARCHAR(20);
+
+SET @fileName = 'E:\Dashboard\BKP\Data\'; -- change to the relevant path
+SET @db_name = 'AdmDashboard';     -- change to the relevant database name
+SET @fileDate = CONVERT(VARCHAR(20), GETDATE(),112);
+SET @fileName = @fileName + @db_name + '_' + RTRIM(@fileDate) + '.bak';
+
+BACKUP DATABASE @db_name TO DISK = @fileName; 
+
+
+-------------------------------------------------------------------------
+
+
+/*******************************************************************/
+/********************  DIM COMPARTILHADA ***************************/
+/*******************************************************************/
+
+DBCC SHRINKdatabase (DimCompartilhada);
+
+-- Backup Database to .bak File
+DECLARE @fileName VARCHAR(90);
+DECLARE @db_name VARCHAR(20);
+DECLARE @fileDate VARCHAR(20);
+
+SET @fileName = 'E:\Dashboard\BKP\Data\'; -- change to the relevant path
+SET @db_name = 'DimCompartilhada';     -- change to the relevant database name
+SET @fileDate = CONVERT(VARCHAR(20), GETDATE(),112);
+SET @fileName = @fileName + @db_name + '_' + RTRIM(@fileDate) + '.bak';
+
+BACKUP DATABASE @db_name TO DISK = @fileName; 
+
+
+------------------------------------------------------------------------------
+
+
+exec  master.dbo.xp_cmdshell 'forfiles -P "E:\Dashboard\BKP\Data\"  -m *.bak -d -7  -c "cmd /C del @FILE" '
+
+
+
+
+
+
+select DATEDIFF(d,'20130801',getdate())
+
+
+
+
+
+
+
+
+create table AD_Bkp_BD_Config (
+	co_bkp [int] IDENTITY(1,1) NOT NULL,
+	co_servidor [int] NOT NULL,
+	no_servidor varchar(30),
+	co_banco [int] NOT NULL,
+	no_banco varchar(30),
+	no_caminho_bkp varchar(100),
+	no_extensao_arquivo char(4),
+	in_ativo tinyint
+
+)
+
+
+
+drop table AD_Bkp_SSAS_Dimensional_Config
+
+select top 0
+	co_servidor, 
+	no_servidor, 
+	co_banco, 
+	no_banco, 
+	no_caminho_bkp, 
+	no_extensao_arquivo, 
+	in_ativo
+into AD_Bkp_SSAS_Dimensional_Config
+from
+	AD_Bkp_BD_Config
+	
+	
+	
+	
+insert into AD_Bkp_SSAS_Dimensional_Config	
+SELECT
+1	,									--co_servidor, 
+'ANHUMAS',								--no_servidor, 
+1	,									--co_banco, 
+'Disponibilidade_Performance_SSAS',		--no_banco, 
+'E:\Dashboard\BKP\Relacional\',			--no_caminho_bkp, 
+'.abf',									--no_extensao_arquivo, 
+1										--in_ativo
+	
+-------------------------------------------------------------------------------	
+--parei aqui
+insert into AD_Bkp_SSAS_Dimensional_Config	
+SELECT
+1	,									--co_servidor, 
+'ANHUMAS',								--no_servidor, 
+2	,									--co_banco, 
+'DMAddinsDB',		--no_banco, 
+'E:\Dashboard\BKP\Relacional\',			--no_caminho_bkp, 
+'.abf',									--no_extensao_arquivo, 
+1										--in_ativo
+	
+--------------------------------------------------------------------------
+
+insert into AD_Bkp_SSAS_Dimensional_Config	
+SELECT
+1	,									--co_servidor, 
+'ANHUMAS',								--no_servidor, 
+3	,									--co_banco, 
+'SGI',		--no_banco, 
+'E:\Dashboard\BKP\Relacional\',			--no_caminho_bkp, 
+'.abf',									--no_extensao_arquivo, 
+1										--in_ativo
+		
+---------------------------------------------------------------------------
+
+
+insert into AD_Bkp_SSAS_Dimensional_Config	
+SELECT
+1	,									--co_servidor, 
+'ANHUMAS',								--no_servidor, 
+4	,									--co_banco, 
+'SGI_Historico',		--no_banco, 
+'E:\Dashboard\BKP\Relacional\',			--no_caminho_bkp, 
+'.abf',									--no_extensao_arquivo, 
+1			
+
+--------------------------------------------------------------------------------
+
+
+insert into AD_Bkp_SSAS_Dimensional_Config	
+SELECT
+1	,									--co_servidor, 
+'ANHUMAS',								--no_servidor, 
+5	,									--co_banco, 
+'SSAS_Demanda',		--no_banco, 
+'E:\Dashboard\BKP\Relacional\',			--no_caminho_bkp, 
+'.abf',									--no_extensao_arquivo, 
+1			
+
+---------------------------------------------------------------------------
+
+
+insert into AD_Bkp_SSAS_Dimensional_Config	
+SELECT
+1	,									--co_servidor, 
+'ANHUMAS',								--no_servidor, 
+6	,									--co_banco, 
+'SSAS_Disponibilidade',		--no_banco, 
+'E:\Dashboard\BKP\Relacional\',			--no_caminho_bkp, 
+'.abf',									--no_extensao_arquivo, 
+1			
+
+
+----------------------------------------------------
+
+
+insert into AD_Bkp_SSAS_Dimensional_Config	
+SELECT
+1	,									--co_servidor, 
+'ANHUMAS',								--no_servidor, 
+7	,									--co_banco, 
+'SSAS_FinanceiroCapex',		--no_banco, 
+'E:\Dashboard\BKP\Relacional\',			--no_caminho_bkp, 
+'.abf',									--no_extensao_arquivo, 
+1			
+
+------------------------------------------------------------------------
+
+
+insert into AD_Bkp_SSAS_Dimensional_Config	
+SELECT
+1	,									--co_servidor, 
+'ANHUMAS',								--no_servidor, 
+8	,									--co_banco, 
+'SSAS_FinanceiroOpex',		--no_banco, 
+'E:\Dashboard\BKP\Relacional\',			--no_caminho_bkp, 
+'.abf',									--no_extensao_arquivo, 
+1		
+
+--------------------------------------------------------------------------
+
+
+insert into AD_Bkp_SSAS_Dimensional_Config	
+SELECT
+1	,									--co_servidor, 
+'ANHUMAS',								--no_servidor, 
+9	,									--co_banco, 
+'SSAS_NumerosTI',		--no_banco, 
+'E:\Dashboard\BKP\Relacional\',			--no_caminho_bkp, 
+'.abf',									--no_extensao_arquivo, 
+1		
+
+
+UPDATE AD_Bkp_SSAS_Dimensional_Config
+SET
+	no_caminho_bkp = 'E:\Dashboard\BKP\Dimensional\'
+	
+
+EXEC SPR_BKP_SSAS_DIMENSIONAL_CMD 'SSAS_NumerosTI','E:\Dashboard\BKP\Dimensional\','.abf'
+
+
+
+
+SELECT
+	no_banco,
+	no_caminho_bkp,
+	no_extensao_arquivo
+
+FROM
+	AD_Bkp_SSAS_Dimensional_Config
+where
+	in_ativo = 1
+
+
+USE [AdmDashboard]
+GO
+
+/****** Object:  StoredProcedure [dbo].[SPR_BKP_BD_EXECUTA]    Script Date: 09/05/2013 10:06:31 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER  PROCEDURE [dbo].[SPR_BKP_BD_EXECUTA]
+AS
+/*********************************************************************************
+	procedure para execução dos backups 
+	executa um loop (cursor) na tabela de configuração e verifica qual base deve ser realizado o backup
+	20130904 - rodrigo edurado
+ *********************************************************************************/
+ 
+BEGIN
+-- declarando as variaveis utilizadas pelo cursor
+DECLARE 
+	@no_banco varchar(30),
+	@no_caminho_bkp varchar(100),
+	@no_extensao_arquivo char(4)
+
+-- iniciando o cursor	
+	DECLARE CURSOR_AD_BKP_BD_CONFIG
+			CURSOR FOR 
+-- pegando os registros da tabela de configuração			
+			SELECT 			
+				no_banco,
+				no_caminho_bkp,
+				no_extensao_arquivo
+			FROM
+				AD_Bkp_BD_Config
+			WHERE
+				in_ativo = 1 -- 1 ativo - 0 inativo
+			ORDER BY 		
+					co_banco
+					
+			OPEN CURSOR_AD_BKP_BD_CONFIG
+			 
+			--ATRIBUINDO VALORES DO SELECT NAS VARIÁVEIS
+			 FETCH NEXT FROM CURSOR_AD_BKP_BD_CONFIG INTO 	
+				@no_banco ,
+				@no_caminho_bkp ,
+				@no_extensao_arquivo
+				
+				WHILE @@FETCH_STATUS = 0
+				BEGIN
+					EXECUTE dbo.SPR_BKP_BD @no_banco ,@no_caminho_bkp ,@no_extensao_arquivo
+					
+					FETCH NEXT FROM CURSOR_AD_BKP_BD_CONFIG INTO 	
+						@no_banco ,
+						@no_caminho_bkp ,
+						@no_extensao_arquivo
+				END
+				
+		CLOSE CURSOR_AD_BKP_BD_CONFIG
+		DEALLOCATE CURSOR_AD_BKP_BD_CONFIG
+END
+
+
+GO
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------
+
+
+
+ssas
+
+
+<Backup xmlns="http://schemas.microsoft.com/analysisservices/2003/engine">
+  <Object>
+    <DatabaseID>SSAS_Demanda</DatabaseID>
+  </Object>
+  <File>SSAS_Demanda.abf</File>
+  <AllowOverwrite>true</AllowOverwrite>
+</Backup>
+

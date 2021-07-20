@@ -1,0 +1,127 @@
+sp_send_dbmail [ [ @profile_name = ] 'profile_name' ]
+    [ , [ @recipients = ] 'recipients [ ; ...n ]' ]
+    [ , [ @copy_recipients = ] 'copy_recipient [ ; ...n ]' ]
+    [ , [ @blind_copy_recipients = ] 'blind_copy_recipient [ ; ...n ]' ]
+    [ , [ @from_address = ] 'from_address' ]
+    [ , [ @reply_to = ] 'reply_to' ] 
+    [ , [ @subject = ] 'subject' ] 
+    [ , [ @body = ] 'body' ] 
+    [ , [ @body_format = ] 'body_format' ]
+    [ , [ @importance = ] 'importance' ]
+    [ , [ @sensitivity = ] 'sensitivity' ]
+    [ , [ @file_attachments = ] 'attachment [ ; ...n ]' ]
+    [ , [ @query = ] 'query' ]
+    [ , [ @execute_query_database = ] 'execute_query_database' ]
+    [ , [ @attach_query_result_as_file = ] attach_query_result_as_file ]
+    [ , [ @query_attachment_filename = ] query_attachment_filename ]
+    [ , [ @query_result_header = ] query_result_header ]
+    [ , [ @query_result_width = ] query_result_width ]
+    [ , [ @query_result_separator = ] 'query_result_separator' ]
+    [ , [ @exclude_query_output = ] exclude_query_output ]
+    [ , [ @append_query_error = ] append_query_error ]
+    [ , [ @query_no_truncate = ] query_no_truncate ] 
+…………[ , [@query_result_no_padding = ] @query_result_no_padding ] 
+    [ , [ @mailitem_id = ] mailitem_id ] [ OUTPUT ]
+
+
+exec msdb.dbo.sp_send_dbmail @profile_name = 'testemail', @recipients = 'rodrigopintodesouza@hotmail.com', @from_address = 'svc_dashboard@dashboard.com' , @subject ='teste' , @body = 'teste com a proc'
+
+
+ALTER procedure SPR_EMAIL (
+	@ASSUNTO VARCHAR(250),
+	@CORPO_MENSAGEM VARCHAR(500)
+)
+AS
+BEGIN
+
+DECLARE @DATA AS VARCHAR(8)
+DECLARE @ASSUNTO_FULL VARCHAR (258)
+DECLARE @CORPO_MENSAGEM_FULL VARCHAR(1000)
+
+
+SET @DATA = CONVERT(VARCHAR,GETDATE(),112)
+
+SET @ASSUNTO_FULL = @ASSUNTO +' '+ @DATA
+
+
+SET @CORPO_MENSAGEM_FULL = 'Prezados,<br/><br/>'+@CORPO_MENSAGEM+'<br/><br/> Att.<br/><br/>* Mensagem automatica.'
+
+
+exec msdb.dbo.sp_send_dbmail 
+@profile_name = 'testemail', 
+@recipients = 'rodrigopintodesouza@hotmail.com;Rodrigo.Souza@keyrus.com.br;Ellen.Dias@keyrus.com.br;genilson.santos@telefonica.com', 
+@from_address = 'svc_dashboard@dashboard.com' , 
+@subject =@ASSUNTO_FULL, 
+@body = @CORPO_MENSAGEM_FULL,
+@body_format = 'HTML'
+
+end
+
+
+exec SPR_EMAIL @assunto = 'TESTE PROC EMAIL',@corpo_mensagem = 'TESTANDO A PROC PARA UTILIZAR'
+
+
+
+Melhorias:
+Inserir na proc os caminhos do pacote(com servidor rede) e agent.
+
+
+
+
+USE [master]
+GO
+
+/****** Object:  StoredProcedure [dbo].[SPR_EMAIL]    Script Date: 09/25/2013 17:26:51 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE procedure [dbo].[SPR_EMAIL] (
+	@ASSUNTO VARCHAR(250),
+	@CORPO_MENSAGEM VARCHAR(500),
+	@LISTA_EMAIL_FROM VARCHAR(500),
+	@SERVIDOR VARCHAR(50),
+	@AGENT VARCHAR(100),
+	@PACOTE VARCHAR(250),
+	@TEMA VARCHAR(100)
+)
+AS
+/*************************************************************************************
+Criada em 25/09/2013 - Rodrigo Eduardo
+Objetivo: Enviar e-mail para os processos automaticos.
+
+*************************************************************************************/
+
+BEGIN
+
+DECLARE @DATA AS VARCHAR(8)
+DECLARE @ASSUNTO_FULL VARCHAR (258)
+DECLARE @CORPO_MENSAGEM_FULL VARCHAR(max)
+
+
+SET @DATA = CONVERT(VARCHAR,GETDATE(),112)
+
+SET @ASSUNTO_FULL = @ASSUNTO +' '+ @DATA
+
+
+SET @CORPO_MENSAGEM_FULL = 'Prezados,<br/><br/> O processo do Tema: '+@TEMA+'<br/> Agendado no Agent como: '+@AGENT+
+' <br/> Pacote SSIS: '+@PACOTE+'<br/><br/>'
++@CORPO_MENSAGEM+'<br/><br/> Att.<br/><br/>* Mensagem automatica.'
+
+
+exec msdb.dbo.sp_send_dbmail 
+	@profile_name = 'svc_dashboard@dashboard.com', 
+	@recipients =,@LISTA_EMAIL_FROM ,
+	@from_address = 'svc_dashboard@dashboard.com' , 
+	@subject =@ASSUNTO_FULL, 
+	@body = @CORPO_MENSAGEM_FULL,
+	@body_format = 'HTML'
+
+end
+
+GO
+
+

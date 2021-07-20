@@ -1,0 +1,33 @@
+CREATE FUNCTION fnSomenteNum 
+(
+	-- Add the parameters for the function here
+	@v_string varchar(100)
+)
+RETURNS varchar(100)
+AS
+
+BEGIN
+	-- Declare the return variable here
+	DECLARE @v_retorno   varchar(100)
+	DECLARE @i_contador  int
+	DECLARE @v_char      varchar(2)
+
+	set @i_contador = 1	
+	set @v_retorno = ''
+
+	-- Add the T-SQL statements to compute the return value here
+	while (@i_contador <= (len(ltrim(rtrim(@v_string)))) )
+	begin	
+		set @v_char = substring(ltrim(rtrim(@v_string)),@i_contador,1) 
+		if rtrim(@v_char) in ('0','1','2','3','4','5','6','7','8','9')	
+			begin
+				set @v_retorno = @v_retorno + @v_char
+			end 
+
+		set @i_contador = @i_contador + 1
+	end
+
+	-- Return the result of the function
+	RETURN @v_retorno
+
+END

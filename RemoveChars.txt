@@ -1,0 +1,12 @@
+create function dbo.RemoveChars(@Input varchar(MAX))
+RETURNS VARCHAR(MAX)
+BEGIN
+	DECLARE @pos INT;
+	SET @pos = PATINDEX('%[^0-9]%',@Input)
+	WHILE @pos > 0
+	BEGIN
+		SET @Input = STUFF(@iNPUT,@POS,1,'')
+		SET @POS = patindex('%[^0-9]%',@Input)
+	END
+	Return @Input
+END;

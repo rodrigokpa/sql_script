@@ -1,0 +1,73 @@
+--query para obter todas as tabelas do schema dim (dimensões)
+
+select schema_name(SCHEMA_ID) as [schema] ,name as [table] from  
+sys.objects where schema_name(SCHEMA_ID) = 'Dim' and type = 'u'
+
+
+
+
+--espaço em disco exec master..xp_fixeddrives
+create table #temp_drive
+(
+drive char(1),
+mb int
+)
+insert into #temp_drive  exec master..xp_fixeddrives
+
+select (mb / 1024) from #temp_drive
+
+ou
+
+create table #temp_drive
+(
+drive char(1),
+mb int
+)
+insert into #temp_drive  exec master..xp_fixeddrives
+
+select *  from #temp_drive where mb < 10000
+
+------------------------------------------------------------------------------------------
+-- *** VERIFICANDO SE UMA TABELA TEMPORARIA EXISTE
+-- DICA É O TEMPDB
+------------------------------------------------------------------------------------------
+
+IF OBJECT_ID('tempdb..##dim_colaborador') IS NOT NULL
+	drop table ##dim_colaborador
+-------------------------------------------------------------------------------------------
+
+
+dbcc MEMORYSTATUS
+
+EXEC master..xp_cmdshell 'ver'
+
+
+
+-------------------------------------------------------------------------------
+SPLIT RASCUNHO
+
+--selecionar o retorno do tipo table de uma função
+--sintaxe
+
+select [campos ou *] from [função()]
+
+SELECT * FROM dbo.fnSplit ('1,2,3   ',',') 
+
+
+
+SELECT * FROM dbo.fnSplit ('1,2,3   ',',') A
+CROSS JOIN (SELECT 1  AS B) TB
+
+
+SELECT * INTO #TEMP FROM(
+SELECT * FROM dbo.fnSplit ('1,2,3   ',',') A
+CROSS JOIN (SELECT 1  AS B) TB) X
+
+
+INSERT INTO #TEMP 
+SELECT * FROM dbo.fnSplit ('4,5,6   ',',') A
+CROSS JOIN (SELECT 3  AS B) TB 
+
+
+
+

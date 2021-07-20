@@ -1,0 +1,204 @@
+CREATE FUNCTION uFC_FERIADOS_NACIONAIS ( @DATA_INI DATETIME , @DATA_FIM DATETIME) 
+RETURNS INT
+
+AS BEGIN
+
+DECLARE	
+------------------------------------------------
+-- VARIÁVEIS PARA CÁLCULO DA PÁSCOA
+------------------------------------------------
+				@QTDE_FERIADO		INT
+			,	@ANO				INT
+			,	@DATA_PASCOA		DATETIME
+			,	@MES				INT
+			,	@DIA				INT
+			,	@A					INT
+			,	@B					INT
+			,	@C					INT
+			,	@D					INT
+			,	@E					INT
+			,	@F					INT
+			,	@G					INT
+			,	@H					INT
+			,	@I					INT
+			,	@K					INT
+			,	@L					INT
+			,	@M					INT
+			,	@CONTADOR			INT
+------------------------------------------------
+-- VARIÁVEL PARA CARNAVAL
+------------------------------------------------
+			,	@DATA_CARNAVAL_1	DATETIME --SEGUNDA
+			,	@DATA_CARNAVAL_2	DATETIME --TERÇA	
+------------------------------------------------
+-- VARIÁVEL PARA PAIXÃO DE CRISTO
+------------------------------------------------
+			,	@DATA_PAIXAO_CRISTO	DATETIME
+------------------------------------------------
+-- VARIÁVEL PARA CORPUS CHRISTI
+------------------------------------------------
+			,	@DATA_CORPUSCHRISTI	DATETIME
+------------------------------------------------
+-- FERIADOS NACIONAIS
+------------------------------------------------
+			,	@DATA_CONF_UNIV		DATETIME
+			,	@DATA_TIRADENTES	DATETIME
+			,	@DATA_DIA_TRABALHO	DATETIME
+			,	@DATA_IND_BRASIL	DATETIME
+			,	@DATA_NSRA_AP		DATETIME
+			,	@DATA_FINADOS		DATETIME
+			,	@DATA_PROCL_REPUB	DATETIME
+			,	@DATA_NATAL			DATETIME;
+------------------------------------------------
+-- VARIÁVEL TABELA PARA ARMAZENAMENTO DE FERIADOS
+------------------------------------------------
+	DECLARE	@TABELA_FERIADO		TABLE	(
+										 DATA_FERIADO DATETIME
+										,DESC_FERIADO VARCHAR(50)
+										);
+------------------------------------------------
+-- PARA ARMAZENAMENTO DE INTERVALO DE ANOS SOLICITADOS.
+------------------------------------------------
+	DECLARE	@TABELA_ANO			TABLE	(
+										 ANO	INT
+										,INDICE INT
+										);
+------------------------------------------------
+-- PARA ARMAZENAMENTO DE INTERVALO DE ANOS SOLICITADOS.
+------------------------------------------------
+IF YEAR(@DATA_INI) =  YEAR(@DATA_FIM)
+	BEGIN
+		INSERT INTO @TABELA_ANO
+			SELECT
+					 YEAR(@DATA_INI)
+					,1
+	END
+ELSE
+	BEGIN
+		INSERT INTO @TABELA_ANO
+			SELECT
+					 YEAR(@DATA_INI)
+					,1
+			UNION
+			SELECT
+					 YEAR(@DATA_FIM)
+					,2
+	END
+
+--SELECT * FROM @TABELA_ANO
+
+WHILE (SELECT COUNT(1) FROM @TABELA_ANO) <> 0
+-------------------------------------------------------
+-- INÍCIO DO BLOCO DE CÁLCULO DE PÁSCOA.
+-------------------------------------------------------
+-- FONTE: (http://pt.wikipedia.org/wiki/Cálculo_da_Páscoa)
+BEGIN
+
+	SET	@ANO = (SELECT TOP 1 ANO FROM @TABELA_ANO)
+	SET	@CONTADOR = 1
+	SET @A = @ANO%19
+	SET @B = @ANO/100
+	SET @C = @ANO%100
+	SET @D = @B/4
+	SET @E = @B%4
+	SET @F = (@B+8)/25
+	SET @G = (@B-@F+1)/3
+	SET @H = (19*@A+@B-@D-@G+15)%30
+	SET @I = @C/4
+	SET @K = @C%4
+	SET @L = (32+2*@E+2*@I-@H-@K)%7
+	SET @M = (@A+11*@H+22*@L)/451
+	SET @MES = (@H+@L-7*@M+114)/31
+	SET @DIA = ((@H+@L-7*@M+114)%31)+1
+
+	SET @DATA_PASCOA =	CAST((LTRIM(RTRIM(CAST(@ANO AS CHAR)))) + '-' + 
+						(LTRIM(RTRIM(CAST(@MES AS CHAR)))) + '-' + 
+						(LTRIM(RTRIM(CAST(@DIA AS CHAR)))) AS DATETIME)
+	-------------------------------------------------------
+	-- INÍCIO DO BLOCO DE FERIADOS DO CARNAVAL
+	-------------------------------------------------------
+	SET	@DATA_CARNAVAL_1 = DATEADD(DD,-48,@DATA_PASCOA)
+	SET	@DATA_CARNAVAL_2 = DATEADD(DD,-47,@DATA_PASCOA)
+	-------------------------------------------------------
+	-- INÍCIO DO BLOCO DE FERIADO PAIXÃO DE CRISTO
+	-------------------------------------------------------
+	SET	@DATA_PAIXAO_CRISTO = DATEADD(DD,-2,@DATA_PASCOA)
+	-------------------------------------------------------
+	-- INÍCIO DO BLOCO DE FERIADO CORPUS CHRISTI 
+	-------------------------------------------------------
+	SET	@DATA_CORPUSCHRISTI = DATEADD(DD,60,@DATA_PASCOA)
+	-------------------------------------------------------
+	-- BLOCO DE CÁLCULO DE FERIADOS NACIONAIS
+	-------------------------------------------------------
+	SET	@DATA_CONF_UNIV		=	CONVERT(VARCHAR(4),@ANO) + '-' + '01-01 00:00:00.000'
+	SET	@DATA_TIRADENTES	=	CONVERT(VARCHAR(4),@ANO) + '-' + '04-21 00:00:00.000'
+	SET	@DATA_DIA_TRABALHO	=	CONVERT(VARCHAR(4),@ANO) + '-' + '05-01 00:00:00.000'
+	SET	@DATA_IND_BRASIL	=	CONVERT(VARCHAR(4),@ANO) + '-' + '09-07 00:00:00.000'
+	SET	@DATA_NSRA_AP		=	CONVERT(VARCHAR(4),@ANO) + '-' + '10-12 00:00:00.000'
+	SET	@DATA_FINADOS		=	CONVERT(VARCHAR(4),@ANO) + '-' + '11-02 00:00:00.000'
+	SET	@DATA_PROCL_REPUB	=	CONVERT(VARCHAR(4),@ANO) + '-' + '11-15 00:00:00.000'
+	SET	@DATA_NATAL			=	CONVERT(VARCHAR(4),@ANO) + '-' + '12-25 00:00:00.000'
+	-------------------------------------------------------
+	-- INSERINDO RESULTADO DE VARIÁVEIS NA VARIAVEL DO TIPO TABELA
+	-------------------------------------------------------
+	INSERT INTO @TABELA_FERIADO (DATA_FERIADO,DESC_FERIADO)
+	SELECT
+			 DATA_FERIADO
+			,DESC_FERIADO
+	FROM	(	
+			SELECT
+					@DATA_PASCOA	AS	[DATA_FERIADO]	
+					,'PASCOA'		AS	[DESC_FERIADO]
+			UNION
+			SELECT
+					@DATA_CARNAVAL_1	,'CARNAVAL - SEGUNDA-FERIA'
+			UNION
+			SELECT
+					@DATA_CARNAVAL_2	,'CARNAVAL - TERÇA-FERIA'
+			UNION
+			SELECT
+					@DATA_PAIXAO_CRISTO	,'PAIXÃO DE CRISTO'
+			UNION
+			SELECT
+					@DATA_CORPUSCHRISTI	,'CORPUS CHRISTI'
+			UNION
+			SELECT
+					@DATA_CONF_UNIV		,'CONFRATERNIZAÇÃO UNIVERSAL'
+			UNION
+			SELECT
+					@DATA_TIRADENTES	,'TIRADENTES'
+			UNION
+			SELECT
+					@DATA_DIA_TRABALHO	,'DIA DO TRABALHO'
+			UNION
+			SELECT
+					@DATA_IND_BRASIL	,'INDEPENDÊNCIA DO BRASIL'
+			UNION
+			SELECT
+					@DATA_NSRA_AP		,'NOSSA SENHORA APARECIDA'
+			UNION
+			SELECT
+					@DATA_FINADOS		,'FINADOS'
+			UNION
+			SELECT
+					@DATA_PROCL_REPUB	,'PROCLAMAÇÃO DA REPÚBLICA'
+			UNION
+			SELECT
+					@DATA_NATAL			,'NATAL'
+			)A
+	-------------------------------------------------------
+	-- CÁLCULO PARA SAÍDA
+	-------------------------------------------------------
+	SELECT	@QTDE_FERIADO = COUNT(1)
+	FROM	@TABELA_FERIADO
+	WHERE	DATEPART(WEEKDAY,DATA_FERIADO) NOT IN (1,7)
+		AND	DATA_FERIADO >=	@DATA_INI 
+		AND	DATA_FERIADO <= @DATA_FIM;
+	
+
+	DELETE FROM @TABELA_ANO WHERE ANO = (SELECT TOP 1 ANO FROM @TABELA_ANO)
+END
+	RETURN @QTDE_FERIADO
+
+END
+

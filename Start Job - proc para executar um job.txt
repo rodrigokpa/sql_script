@@ -1,0 +1,19 @@
+Start Job - proc para executar um job
+RODRIGO EDUARDO PINTO DE SOUZA
+Ter, 08/10/2013 16:59
+sp_start_job (Transact-SQL)
+SQL Server 2012 SQL Server 2012
+Other Versions Outras versões
+
+5 out of 5 rated this helpful - Rate this topic 5 de 5 classificaram isso como útil - Avalie este tópico
+Instructs SQL Server Agent to execute a job immediately. 
+Instrui o SQL Server Agent para executar um trabalho imediatamente. 
+ 
+ 
+ 
+Exemplos 
+The following example starts a job named Weekly Sales Data Backup . 
+O exemplo a seguir inicia um trabalho chamado Weekly Vendas de backup de dados. 
+ 
+USE msdb ; GO EXEC dbo.sp_start_job N'Weekly Sales Data Backup' ; GO 
+USE msdb; GO EXEC dbo.sp_start_job N'Weekly Vendas Backup de Dados '; GO 

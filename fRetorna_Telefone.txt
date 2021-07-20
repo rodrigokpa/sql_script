@@ -1,0 +1,180 @@
+CREATE FUNCTION [dbo].[fRetorna_Telefone] 
+(    
+ @fone varchar(50),    
+ @tipo varchar(1)    
+)    
+returns VARCHAR(50)    
+AS    
+begin    
+
+   declare @tel varchar(50)    
+   declare @x as varchar(50)    
+   declare @f int    
+   declare @ramal varchar(50)    
+   declare @DDD varchar(50)    
+   declare @retorno varchar(50)    
+   declare @i as int    
+   declare @telefone varchar(50)    
+
+   set @ramal = ''    
+   set @DDD = ''    
+
+-- limpa sequência de caracteres de ligação e descrição
+   set @tel = replace(replace(@tel,'-', ' '),'.',' ')    
+   set @tel = replace(@tel,'(',' ')    
+   set @tel = replace(@tel,')', ' ')    
+   set @tel = replace(@tel,'RES', ' ')    
+   set @tel = replace(@tel,'REC', ' ')    
+   set @tel = replace(@tel,'OU', '/')    
+   set @tel = replace(@tel,';', '/')    
+   set @tel = replace(@tel,'\', '/')    
+   set @tel = replace(@tel,'  ', ' ')    
+   set @tel = ltrim(rtrim(@tel))    
+   set @tel = UPPER(LTRIM(RTRIM(@fone)))    
+
+   set @f = charindex('/',@tel)    
+
+   If (@f > 6)     
+   begin    
+      set @Tel = LTRIM(RTRIM( substring(@Tel, 1, @F - 1))) 
+   end    
+   Else    
+   begin    
+      set @Tel = LTRIM(RTRIM(Replace(@tel, '/', ' '))) 
+   end    
+
+  -- funcao somente numeros e identificação de ramal (R)
+   set @i = 1    
+   set @telefone = ''    
+   While @I <= Len(@tel)    
+   begin    
+      set @X = substring(@tel, @I, 1)    
+      If ((@X >= '0') And (@X <= '9')) Or (@X = 'R') Or (@X = ' ')     
+      begin    
+         set @telefone = convert(varchar,@telefone) + convert(varchar,@X)    
+      End    
+   set @i = @i + 1    
+   end    
+   set @tel = LTRIM(RTRIM( @telefone )) 
+
+--   'Separa Ramal    
+   set @F = charindex('R',@tel)    
+   If (@F > 0)     
+   begin    
+      set @Ramal = rtrim( ltrim( SubString(@Tel, @F + 1, 40) ) )
+      set @Tel = LTRIM(RTRIM( Substring(@Tel, 1, @F - 1))) 
+
+      set @F = charindex(' ',@Ramal) 
+      If @F > 1
+         set @Ramal = SubString(@Ramal , 1 , @F - 1)
+
+      set @Ramal = REPLACE( @Ramal , 'R' , '' )
+
+   End    
+
+-- Para melhorar a performance no caso de solicitar o Ramal, não precisamos executar este código
+   if @tipo <> 'R' BEGIN
+
+--   'Separa DDD    
+      set @F = charindex(' ',@tel)    
+      If (@F > 0)     
+      begin    
+         set @X = Substring(@tel,1,@f-1)    
+--      'Embratel 21    
+         If (@X Like '021%') And (Len(@X) = 5)    
+         begin    
+            set @X = convert(varchar,'0') + convert(varchar,Substring(@X, 4, 2))    
+         End    
+         If ((@F <= 5) And (Left(@X, 1) = '0')) or (convert(integer,left(@X,5)) <= 99)    
+         begin    
+           set @DDD = convert(varchar,@x)    
+           set @Tel = LTRIM(RTRIM(substring(@tel,@f+1,40))) 
+         End    
+      End    
+
+--   'Separa Fone    
+      set @F = charindex(' ',@tel)    
+      If (@F > 0) And (@F < 6)     
+      Begin    
+         set @Tel = LTRIM(RTRIM( convert(varchar,substring(@tel,1,@f-1)) + Substring(@Tel, @F + 1, 40))) 
+      End    
+             
+--   'Caso não haja espaços e comece com zero ou 1 (Provavelmente DDD de SP)    
+      If (@DDD = '')     
+      begin    
+         If (Left(@Tel, 1) = '0')    
+         begin    
+  --olhar ifs aqui    
+            If (Left(@Tel, 2) = '00')     
+            begin    
+               set @Tel = substring(@tel,2,40)    
+            end    
+            set @DDD = substring(@tel,1,3)    
+            set @Tel = LTRIM(RTRIM( substring(@tel,4,40))) 
+         End    
+         If (Left(@Tel, 1) = '1')    
+         begin    
+            set @DDD = substring(@tel,1,2)    
+            set @Tel = LTRIM(RTRIM( substring(@tel,3,40))) 
+         End    
+      End    
+
+--   'Em caso de DDD com 3 digitos, coloca o último no prefixo do telefone    
+      If (@DDD <> '')     
+      begin    
+         If (convert(numeric(18,0),@DDD) > 100) And (Len(@Tel) <= 7)     
+         begin    
+    set @Tel = LTRIM(RTRIM( convert(varchar,Right(@DDD, 1)) + convert(varchar,@tel))) 
+            set @DDD = substring(@ddd,1,len(@ddd)-1)    
+         End    
+      End    
+    
+      IF (len(@Tel) IN (10,11) and (@ddd = '' or @ddd is null) ) 
+      begin    
+         set @ddd = left(@tel,2) 
+         set @tel = right(@tel,LEN(@Tel)-2)    
+      end    
+
+      set @Tel = replace(@Tel, ' ', '')    
+      set @DDD = replace(@DDD, ' ', '')  
+
+-- Invalida Repeticões 000000,111111,222222...
+		Set @f = 0
+
+		while @f <= 9 AND LEN( @Tel ) > 0 begin
+
+			if left(@Tel,7) = replicate(@f,7)
+				Set	@Tel = ''
+
+			Set @f = @f + 1
+
+		end
+       
+      if len(@tel) > 9
+         OR len(@tel) < 8 
+      begin    
+         set @tel = ''    
+         set @ddd = ''    
+         set @ramal = ''    
+      end    
+
+   end    
+
+-- limpa retorno do ramal
+   if @tipo = 'R'    
+      set @retorno = replace(@Ramal, ' ', '') 
+    
+-- alterado função original que mantinha o zero a esquerda
+   if @tipo = 'D' BEGIN
+      IF LEN( @DDD ) = 3 AND LEFT( @DDD , 1 ) = '0'
+         set @retorno = RIGHT( @DDD , 2 ) 
+      ELSE
+         set @retorno = @DDD    
+   END
+
+   if @tipo = 'T'    
+      set @retorno = @Tel    
+
+   return @retorno    
+    
+end

@@ -1,0 +1,27 @@
+create function fn_cpf_aquisicao (
+@cpf varchar(20)
+)
+returns varchar(11)
+as
+begin
+declare @cpf_tratado varchar(11)
+
+set @cpf_tratado =
+right(replicate('0',11)+ rtrim(ltrim(replace(replace(replace(replace(replace(replace(@cpf,',',''),'.',''),'-',''),'/',''),'\',''),' ',''))),11)
+return @cpf_tratado
+end
+
+create function fn_cnpj_aquisicao (
+@cnpj varchar(20)
+)
+returns varchar(14)
+as
+begin
+declare @cnpj_tratado varchar(14)
+
+set @cnpj_tratado =
+right(replicate('0',14)+ rtrim(ltrim(replace(replace(replace(replace(replace(replace(@cnpj,',',''),'.',''),'-',''),'/',''),'\',''),' ',''))),14)
+return @cnpj_tratado
+end
+
+--somente numero e somente texto

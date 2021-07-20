@@ -1,0 +1,209 @@
+alter procedure spr_versionamento_gera_texto
+		@objname		nvarchar(776)
+		,@columnname	sysname = NULL
+as
+declare	 @dbname		sysname
+		,@objid			int
+		,@BlankSpaceAdded   int
+		,@BasePos       int
+		,@CurrentPos    int
+		,@TextLength    int
+		,@LineId        int
+		,@AddOnLen      int
+		,@LFCR          int --lengths of line feed carriage return
+		,@DefinedLength int
+
+		/* NOTE: Length of @SyscomText is 4000 to replace the length of
+		** text column in syscomments.
+		** lengths on @Line, @CommentText Text column and
+		** value for @DefinedLength are all 255. These need to all have
+		** the same values. 255 was selected in order for the max length
+		** display using down level clients
+		*/
+		,@SyscomText		nvarchar(4000)
+		,@Line          	nvarchar(255)
+		,@sql				nvarchar(4000)
+		,@owner_proc		sysname
+		,@owner_alter		sysname
+		,@first_proc_name	sysname
+		,@dt_created		datetime
+		,@dt_modified		datetime
+		,@numb_version		int
+
+--capturo o id do objeto na tabela de log.
+select @objid = (select distinct [object_id] from uol_historico.dbo.log_versionamento_proc where [object_name] = @objname);
+
+--capturo o owner, o nome original da proc e a data de criação
+select	 @owner_proc		= [owner]
+		,@first_proc_name	= [object_name]
+		,@dt_created		=  dt_created
+from	uol_historico.dbo.log_versionamento_proc
+where	[object_id] = @objid
+	and	dt_created = (select min(dt_created) from uol_historico.dbo.log_versionamento_proc where [object_id] = @objid);
+
+--capturo o owner da alteração, a versão da proc
+select	 @owner_alter	=	[owner]
+		,@numb_version	=	version
+		,@dt_modified	=	dt_modified
+from	uol_historico.dbo.log_versionamento_proc
+where	[object_id] = @objid
+	and	dt_modified = (select max(dt_modified) from uol_historico.dbo.log_versionamento_proc where	[object_id] = @objid );
+
+select @DefinedLength = 255
+select @BlankSpaceAdded = 0 /*Keeps track of blank spaces at end of lines. Note Len function ignores
+                             trailing blank spaces*/
+
+declare @CommentText table (LineId	int,Text	nvarchar(255) collate database_default)
+												
+-------------------------------------------------------
+-- INSERINDO CABEÇALHO.
+-------------------------------------------------------
+set @sql = '	------------------------------------------------------'
+insert into @CommentText
+	select	 9999999
+			,@sql;
+
+set @sql = '	--			 VERSIONAMENTO DE PROCEDURES			--'
+insert into @CommentText
+	select	 9999998
+			,@sql;
+set @sql = '	--			 desenvolvedor: Fábio Battestin			--'
+insert into @CommentText
+	select	 9999997
+			,@sql;
+set @sql = '	------------------------------------------------------'
+insert into @CommentText
+	select	 9999996
+			,@sql;
+
+set @sql = '	-- *** ' + upper(convert(varchar,@first_proc_name)) + '*** --' + char(13)
+insert into @CommentText
+	select	 9999995
+			,@sql;
+set @sql = '	------------------------------------------------------' + char(13) 
+insert into @CommentText
+	select	 9999994
+			,@sql;
+
+set @sql = '	--	Versão da Procedure: ' + convert(varchar,@numb_version) + char(13)
+insert into @CommentText
+	select	 9999993
+			,@sql;
+
+set @sql = '	--	Criador: ' + convert(varchar,@owner_proc)	+ char(13) 
+insert into @CommentText
+	select	 9999992
+			,@sql;
+
+set @sql = '	--	Data de Criação: ' + convert(varchar,@dt_created,103) + ' - '+ convert(varchar,@dt_created,108) + char(13)
+insert into @CommentText
+	select	 9999991
+			,@sql;
+
+set @sql = '	--	Alterado por: ' + convert(varchar,@owner_alter) + char(13) 
+insert into @CommentText
+	select	 9999990
+			,@sql;
+
+set @sql = '	--	Data de Alteração: ' + convert(varchar,@dt_modified,103) + ' - '+ convert(varchar,@dt_modified,108) + char(13)
+insert into @CommentText
+	select	 9999989
+			,@sql;
+
+set @sql = '	------------------------------------------------------'
+insert into @CommentText
+	select	 9999988
+			,@sql;
+-------------------------------------------------------
+-- FIM DO CABEÇALHO.
+-------------------------------------------------------
+
+		declare ms_crs_syscom  CURSOR LOCAL
+		FOR select text from syscomments where id = @objid and encrypted = 0
+				ORDER BY number, colid
+		FOR READ ONLY
+
+/*
+**  else get the text.
+*/
+select @LFCR = 2
+select @LineId = 1
+
+
+OPEN ms_crs_syscom
+
+FETCH NEXT from ms_crs_syscom into @SyscomText
+
+WHILE @@fetch_status >= 0
+begin
+
+
+
+    select  @BasePos    = 1
+    select  @CurrentPos = 1
+    select  @TextLength = LEN(@SyscomText)
+
+    WHILE @CurrentPos  != 0
+    begin
+        --Looking for end of line followed by carriage return
+        select @CurrentPos =   CHARINDEX(char(13)+char(10), @SyscomText, @BasePos)
+        --If carriage return found
+        IF @CurrentPos != 0
+        begin
+            /*------------------------------------------------------*
+			|	If new value for @Lines length will be > then the	|
+            |	set length then insert current contents of @line	|
+            |	and proceed.										|
+			*-------------------------------------------------------*/
+            while (isnull(LEN(@Line),0) + @BlankSpaceAdded + @CurrentPos-@BasePos + @LFCR) > @DefinedLength
+            begin
+                select @AddOnLen = @DefinedLength-(isnull(LEN(@Line),0) + @BlankSpaceAdded)
+                INSERT @CommentText VALUES
+                ( @LineId,
+                  isnull(@Line, N'') + isnull(SUBSTRING(@SyscomText, @BasePos, @AddOnLen), N''))
+                select @Line = NULL, @LineId = @LineId + 1,
+                       @BasePos = @BasePos + @AddOnLen, @BlankSpaceAdded = 0
+            end
+            select @Line    = isnull(@Line, N'') + isnull(SUBSTRING(@SyscomText, @BasePos, @CurrentPos-@BasePos + @LFCR), N'')
+            select @BasePos = @CurrentPos + 2
+            INSERT @CommentText VALUES( @LineId, @Line )
+            select @LineId = @LineId + 1
+            select @Line = NULL
+        end
+        else
+        --else carriage return not found
+        begin
+            IF @BasePos <= @TextLength
+            begin
+                /*
+					If new value for @Lines length will be > then the
+                **	defined length
+                */
+                while (isnull(LEN(@Line),0) + @BlankSpaceAdded + @TextLength-@BasePos+1 ) > @DefinedLength
+                begin
+                    select @AddOnLen = @DefinedLength - (isnull(LEN(@Line),0) + @BlankSpaceAdded)
+                    INSERT @CommentText VALUES
+                    ( @LineId,
+                      isnull(@Line, N'') + isnull(SUBSTRING(@SyscomText, @BasePos, @AddOnLen), N''))
+                    select @Line = NULL, @LineId = @LineId + 1,
+                        @BasePos = @BasePos + @AddOnLen, @BlankSpaceAdded = 0
+                end
+                select @Line = isnull(@Line, N'') + isnull(SUBSTRING(@SyscomText, @BasePos, @TextLength-@BasePos+1 ), N'')
+                if LEN(@Line) < @DefinedLength and charindex(' ', @SyscomText, @TextLength+1 ) > 0
+                begin
+                    select @Line = @Line + ' ', @BlankSpaceAdded = 1
+                end
+            end
+        end
+    end
+
+	FETCH NEXT from ms_crs_syscom into @SyscomText
+end
+
+IF @Line is NOT NULL
+    INSERT @CommentText VALUES( @LineId, @Line )
+
+CLOSE  ms_crs_syscom
+DEALLOCATE 	ms_crs_syscom
+
+select Text from @CommentText  where text is not null order by LINEID DESC;

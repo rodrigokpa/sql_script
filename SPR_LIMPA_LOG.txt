@@ -1,0 +1,47 @@
+CREATE PROCEDURE [dbo].[SPR_LIMPA_LOG]
+
+AS
+SET NOCOUNT ON
+
+DECLARE 
+   @DB AS VARCHAR( 200 ) , 
+   @SQL AS VARCHAR( 8000 ) , 
+   @COMMANDO AS VARCHAR( 200 ) 
+
+-- PRIMEIRA BASE ATIVA
+SELECT @DB = MIN( NAME ) FROM SYSDATABASES WHERE STATUS = 65544 
+
+WHILE @DB IS NOT NULL BEGIN 
+
+   SELECT @COMMANDO = command 
+      FROM sys.dm_exec_requests AS R
+      CROSS APPLY sys.dm_exec_sql_text(sql_handle) AS T
+      WHERE text LIKE '%BACKUP%' + @DB + '%'
+         AND command LIKE '%BACKUP%'
+
+   IF @COMMANDO IS NULL BEGIN 
+
+      PRINT 'USE ' + @DB 
+
+      SELECT @SQL = 'USE ' + @DB + CHAR( 13 ) + 
+               'checkpoint ' + CHAR( 13 ) + 
+               'backup log ' + @DB + ' with truncate_only ' + CHAR( 13 ) + 
+               'Dbcc ShrinkFile(2,0) ' + 
+               CASE WHEN @DB = 'UOL_Assinaturas' 
+                     THEN CHAR( 13 ) + 'Dbcc ShrinkFile(UOL_Assinaturas_Log_G,0) ' + 
+                           CHAR( 13 ) + 'Dbcc ShrinkFile( UOL_Assinaturas_log_e,0) ' 
+                     ELSE ''
+                  END
+
+      EXEC ( @SQL )
+
+   END
+   ELSE 
+
+      SET @COMMANDO = NULL 
+
+-- PROXIMA BASE ATIVA
+   SELECT @DB = MIN( NAME ) FROM SYSDATABASES WHERE STATUS = 65544 AND NAME > @DB 
+
+END
+

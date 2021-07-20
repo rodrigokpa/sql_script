@@ -1,0 +1,40 @@
+CREATE FUNCTION [dbo].[fnProximaDataUtil_RS] (
+	@pData DATETIME
+)
+RETURNS DATETIME
+AS
+BEGIN
+
+	DECLARE @NOVA_DATA DATETIME,
+			@FLAG_DT_DIA_UTIL INT,
+			@DIA_FERIADO INT
+
+	SET @NOVA_DATA = @pData
+	SET @FLAG_DT_DIA_UTIL = 0
+	SET @DIA_FERIADO = 0
+
+	WHILE @FLAG_DT_DIA_UTIL = 0
+	BEGIN
+		-- Incrementa a nova data a partir da data passada como parâmetro. Se for sexta soma 3, sábado soma 2, diferente disto 1.
+	    SET @NOVA_DATA = DATEADD(DD,CASE DATEPART(DW,@NOVA_DATA) WHEN 7 THEN 2 WHEN 6 THEN 3 ELSE 1 END,@NOVA_DATA)
+
+		-- Verifica se o dia somado é feriado.
+		SELECT @DIA_FERIADO = COUNT(*) 
+		FROM UOL_ASSINATURAS..AUX_FERIADOS
+		WHERE CONVERT(DATETIME,DT_FERI,103) = CONVERT(DATETIME,@NOVA_DATA,103)			
+
+		-- Se o dia somado for feriado, mantém a flag de dia útil = 0 para forçar novamente a verificação acima, incrementando a data.
+		IF @DIA_FERIADO > 0 
+		begin
+		   SET @FLAG_DT_DIA_UTIL = 0
+		end
+		ELSE 
+		begin
+		   SET @FLAG_DT_DIA_UTIL = 1
+		end
+		
+	END
+	RETURN @NOVA_DATA
+
+END
+

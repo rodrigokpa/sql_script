@@ -1,0 +1,39 @@
+alter FUNCTION FN_Caractere_Especial                                     
+(                                    
+    @string VARCHAR(1000)                                
+)                                    
+/********************************************************                                    
+    FUNÇÃO PARA PADRONIZAR E RETIRAR CARACTERES ESPECIAIS DO CEP                                
+    RODRIGO - 18/03/2013                                
+                                    
+********************************************************/                                    
+RETURNS VARCHAR(1000)                                    
+AS                                    
+BEGIN                                    
+DECLARE @string_TRATADO VARCHAR(1000)                                    
+DECLARE @Contador INT                                    
+DECLARE @FINAL INT                                    
+                                    
+IF @string IS NULL                                    
+        SET @string_TRATADO = NULL                            
+ELSE                                    
+    BEGIN                                
+                                    
+        SET @Contador = 1                            
+        SET @FINAL = LEN(@string )                            
+                                    
+        SET @string_TRATADO = ''                            
+                                    
+        WHILE   @Contador < @FINAL + 1                            
+            BEGIN                        
+                SET  @string_TRATADO = @string_TRATADO + CASE WHEN SUBSTRING(@string ,@Contador,1) IN (char(8),char(9),char(10),char(11),char(12),char(13),char(14),char(15),char(16),char(127),char(27)) THEN ' '  else SUBSTRING(@string ,@Contador,1)  END                    
+                SET @Contador = @Contador + 1                    
+            END                        
+                                    
+        SET @string_TRATADO =    rtrim(ltrim(replace(@string_TRATADO,'  ',' ')))                        
+                                
+    END                                
+                                    
+RETURN @string_TRATADO                                    
+END                                    
+                                    

@@ -1,0 +1,167 @@
+CREATE FUNCTION [dbo].[fTrataTelefone](
+	@strTelefoneEntrada varchar(100)=null,
+	@strTipoTelefone varchar(1)=null
+)
+      RETURNS VARCHAR(100)
+AS
+BEGIN
+
+	/**********************************************************************************
+	Procedure:		fTrataTelefone
+	Data Criação:	13/03/2008
+	Descrição:		Trata o Telefone
+	**********************************************************************************/
+
+	DECLARE @strDDD varchar(3),
+			@strTelefone varchar(100),
+			@strRamal varchar(4),
+			@strCaracter varchar(100),
+			@intPosicao int,
+			@blnOK bit,
+			@iCont int,
+			@strRetorno varchar(100)
+
+	Set @blnOK = 0
+	Set @strDDD = ''
+	Set @strRamal = ''
+	Set @intPosicao = 0
+	Set @iCont = 0
+   
+	if @strTelefoneEntrada is null
+		RETURN ''
+
+	--Retira Caracteres Especiais
+	Set @strTelefone = ltrim(rtrim(@strTelefoneEntrada))
+	Set @strTelefone = replace(@strTelefone,'-','')
+	Set @strTelefone = replace(@strTelefone,'.','')
+	Set @strTelefone = replace(@strTelefone,'(','')
+	Set @strTelefone = replace(@strTelefone,')','')
+	Set @strTelefone = replace(@strTelefone,'RES',' ')
+	Set @strTelefone = replace(@strTelefone,'REC',' ')
+	Set @strTelefone = replace(@strTelefone,'OU','/')
+	Set @strTelefone = replace(@strTelefone,';','/')
+	Set @strTelefone = replace(@strTelefone,'\','/')
+	Set @strTelefone = replace(@strTelefone,'  ',' ')
+	Set @strTelefone = replace(@strTelefone,' ','')
+	Set @strTelefone = replace(@strTelefone,'³'COLLATE SQL_Latin1_General_CP1_CS_AS,'')
+	Set @strTelefone = ltrim(rtrim(@strTelefone))
+  
+	--Ignora Texto apos "/" a partir da sexta posicao
+	If charindex('/',@strTelefone) > 6
+		Set @strTelefone = substring(@strTelefone,1,charindex('/',@strTelefone)-1)
+	else
+		Set @strTelefone = replace(@strTelefone,'/',' ')
+
+	--Somente Números, ' '
+	Set @strTelefone = cast(UOL_Aquisicao.DBO.fTiraEspacos(UOL_Aquisicao.DBO.fSomenteNumeros(@strTelefone)) as varchar(18))
+    Set @strTelefone = cast(cast(@strTelefone as bigint) as varchar(20))
+	
+   
+	--Separa Ramal
+	if charindex('R',@strTelefone) > 0 begin
+		Set @strRamal = substring(@strTelefone,charindex('R',@strTelefone) + 1,100)
+		Set @strRamal = replace(@strRamal,'R','')
+		Set @strTelefone = substring(@strTelefone,1,charindex('R',@strTelefone) -1)
+	end
+
+	--Separa DDD
+	if charindex(' ',@strTelefone) > 0 begin
+		Set @strCaracter = substring(@strTelefone,1,charindex(' ',@strTelefone)-1)
+
+		--Embratel 21
+		if (@strCaracter like '021%') and (len(@strCaracter) = 5)
+			Set @strCaracter = '0' + substring(@strCaracter,4,2)
+
+		If ((charindex(' ',@strTelefone) <= 5) and (left(@strCaracter,1) = '0')) or (convert(int,@strCaracter) <=99) begin
+			Set @strDDD = convert(int,@strCaracter)
+			Set @strTelefone = substring(@strTelefone,charindex(' ',@strTelefone)+1,100)
+		end
+		
+	end
+
+	--Separa Fone
+	Set @intPosicao = charindex(' ',@strTelefone)
+	if @intPosicao > 0 and @intPosicao < 6
+		Set @strTelefone = substring(@strTelefone,1,charindex(' ',@strTelefone) -1) + substring(@strTelefone,charindex(' ',@strTelefone) + 1,100)
+	
+	--Pega o primeiro telefone caso tenha + de 1
+	--supõe que sequenxia de 7 ou 8 caracteres separados por espaco seja o primeiro telefone
+	If (@intPosicao = 8) Or (@intPosicao = 9)
+		Set @strTelefone = substring(@strTelefone,1,@intPosicao-1)
+
+
+	--Caso nao haja espacos e comece com zero 
+	if @strDDD = '' begin
+		if(left(@strTelefone,1) = '0') begin
+			if(left(@strTelefone,2) = '00')
+				Set @strTelefone = substring(@strTelefone,2,100)
+
+			Set @strDDD = substring(@strTelefone,2,2)
+			Set @strTelefone = substring(@strTelefone,4,100)
+		end
+		
+		if(left(@strTelefone,1) IN ('1','2','3','4','5','6','7','8','9')) begin
+			Set @strDDD = substring(@strTelefone,1,2)
+			Set @strTelefone = substring(@strTelefone,3,100)
+		end
+	end
+
+   
+	--Em caso de DDD com 3 digitos, coloca o ultimo no prefixo do telefone
+	if @strDDD <> '' begin
+		if (convert(int,@strDDD) > 100) and (len(@strTelefone) <=7) begin
+			Set @strTelefone = right(@strDDD,1) + @strTelefone
+			Set @strDDD = substring(@strDDD,1,len(@strDDD) - 1) 
+		end
+	end
+
+	--RETORNO
+	Set @strTipoTelefone = upper(@strTipoTelefone)
+	Set @strTelefone = replace(@strTelefone,' ','')
+
+	--'Invalida Repeticões 000000,111111,222222...
+	If(@strTelefone = '') or (len(@strTelefone) = 7) or (len(@strTelefone) = 8)
+		set @blnOK = 1
+
+	if @blnOK = 1 begin
+
+		Set @iCont = 1
+
+		while @iCont <= 9 begin
+			if left(@strTelefone,7) = replicate(@iCont,7)
+				Set	@blnOK = 0
+
+			Set @iCont = @iCont + 1
+		end
+
+		if left(@strTelefone,4) = '0000'
+			Set @blnOk = 0
+
+	end
+
+	If @blnOk = 1 begin
+
+		if (@strTipoTelefone = 'D')
+			Set @strRetorno = replace(@strDDD,' ','')
+		
+
+		if (@strTipoTelefone = 'R')
+			Set @strRetorno = replace(@strRamal,' ','')
+		
+		if (@strTipoTelefone = 'T')
+			Set @strRetorno = @strTelefone
+	end
+	else begin
+		Set @strRetorno = ''
+	end
+
+	if (@strTipoTelefone = 'D' and len(@strTipoTelefone)<>2) and isnumeric(@strTipoTelefone)=0
+		set @strTipoTelefone = ''
+
+	if (@strTipoTelefone = 'T' and len(@strTipoTelefone)<>8) and isnumeric(@strTipoTelefone)=0
+		set @strTipoTelefone = ''
+	
+
+	RETURN @strRetorno
+
+END

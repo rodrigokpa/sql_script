@@ -1,0 +1,25 @@
+CREATE PROCEDURE UP_LIMP_TEMPDB
+AS
+BEGIN
+DECLARE @KILLCMD NVARCHAR(128)
+,@spid INT
+
+DECLARE killcursor CURSOR FOR
+SELECT DISTINCT spid FROM master..sysprocesses
+WHERE dbid in (SELECT dbid FROM master..sysdatabases WHERE dbid > 4)
+
+OPEN killcursor
+
+FETCH  NEXT FROM killcursor INTO @spid
+
+WHILE @@FETCH_STATUS <> -1
+BEGIN
+	SET	@killcmd = 'kill' + convert(varchar(10),@spid)
+	PRINT @killcmd
+	EXECUTE sp_executesql @killcmd
+FETCH  NEXT FROM   killcursor INTO @spid
+END
+CLOSE killcursor
+DEALLOCATE killcursor
+END
+

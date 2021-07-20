@@ -1,0 +1,49 @@
+--Scripts para Restore dos Bancos
+
+--Restore de Banco Dimensional --SSAS
+
+<Restore xmlns="http://schemas.microsoft.com/analysisservices/2003/engine">
+  <File>E:\Dashboard\BKP\Dimensional\SSAS_FinanceiroOpex.abf</File>
+  <DatabaseName>SSAS_FinanceiroOpex</DatabaseName>
+  <AllowOverwrite>true</AllowOverwrite>
+</Restore>
+
+
+<Restore xmlns="http://schemas.microsoft.com/analysisservices/2003/engine">
+  <File>E:\Dashboard\BKP\Dimensional\SSAS_Contratos_20131210.abf</File>
+  <DatabaseName>SSAS_Contratos</DatabaseName>
+  <AllowOverwrite>true</AllowOverwrite>
+</Restore>
+
+
+----------------------------------------------------------------------------------------------------
+
+--Restore do Banco Relacional -- Sql Server
+
+--exemplo utilizando arquivo de log -- não é preciso
+
+
+RESTORE DATABASE [DBA] FROM  
+DISK = N'E:\Dashboard\BKP\Relacional\DBA_20131211.bak' 
+WITH  FILE = 1,  
+MOVE N'DBA' 
+TO N'E:\Program Files\Microsoft SQL Server\MSSQL10_50.MSSQLSERVER\MSSQL\DATA\DBA.mdf',  
+MOVE N'DBA_log' 
+TO N'E:\Program Files\Microsoft SQL Server\MSSQL10_50.MSSQLSERVER\MSSQL\DATA\DBA.ldf',  
+NOUNLOAD,  REPLACE,  STATS = 10
+GO
+
+
+--exemplo sem referenciar o arquivo de log -- mais rapido e enxuto
+
+
+
+
+RESTORE DATABASE [Demanda] FROM  
+DISK = N'E:\Dashboard\BKP\Relacional\Demanda_20131210.bak' 
+WITH  FILE = 1,  
+NOUNLOAD,  REPLACE,  STATS = 10
+GO
+
+
+

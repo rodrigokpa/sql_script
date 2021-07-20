@@ -1,0 +1,5 @@
+BEGIN                  
+ IF EXISTS(SELECT * FROM SYSOBJECTS WHERE [NAME] = 'EXTRACAO_MASSMAIL_SUP_TEC')                  
+  DROP TABLE EXTRACAO_MASSMAIL_SUP_TEC;     
+
+Se existir o objeto *** Drope a tabela

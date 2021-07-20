@@ -1,0 +1,266 @@
+Procedures não documentadas
+RODRIGO EDUARDO PINTO DE SOUZA
+Qua, 02/07/2014 12:16
+Link:
+http://www.databasejournal.com/features/mssql/article.php/1441251/Useful-Undocumented-Extended-Stored-Procedures.htm
+ 
+ 
+ 
+ 
+ 
+Os melhores artigos de banco de dados 
+MS SQL SQL MS
+
+Posted Mar 12, 2001 Postado 12 de março de 2001 
+Useful Undocumented Extended Stored Procedures Útil indocumentados prolongado Stored Procedures
+By Alexander Chigrik Por Alexander Chigrik 
+
+Introduction Introdução
+Extended stored procedure is a dynamic link library that run directly in the address space of SQL Server and is programmed using the SQL Server Open Data Services API. Procedimento armazenado estendido é uma biblioteca de vínculo dinâmico que rodam diretamente no espaço de endereço do SQL Server e é programado usando a API do SQL Server Open Data Services. You can write your own extended stored procedure in a programming language such as C. You can run extended stored procedures from the Query Analyzer, for example, as normal stored procedures. Você pode escrever seu próprio procedimento armazenado estendido em uma linguagem de programação como C. Você pode executar procedimentos armazenados estendidos do Query Analyzer, por exemplo, como procedimentos armazenados normais. Extended stored procedures are used to extend the capabilities of SQL Server. Os procedimentos armazenados estendidos são usados ??para ampliar os recursos do SQL Server.
+In this article, I want to tell you about some useful undocumented extended stored procedures. Neste artigo, quero dizer-lhe sobre alguns procedimentos prolongados sem documentos úteis armazenados. The extended stored procedures, which were described below, are working with SQL Server 7.0 as well as with SQL Server 2000. Os procedimentos armazenados estendidos, que foram descritos a seguir, estão trabalhando com o SQL Server 7.0, bem como com o SQL Server 2000.
+
+ sp_MSgetversion sp_MSgetversion 
+
+This extended stored procedure can be used to get the current version Este procedimento armazenado estendido pode ser usado para obter a versão atual
+of Microsoft SQL Server. do Microsoft SQL Server.
+To get the current SQL Server version, run Para obter a versão atual do SQL Server, execute
+
+ 
+EXEC master..sp_MSgetversion EXEC master .. sp_MSgetversion
+
+
+Note. Nota. By the way, more recommended way to get the current SQL Server By the way, forma mais recomendada para obter o atual SQL Server
+version (this way provides more information) is executing the following versão (desta forma fornece mais informações) está executando o seguinte
+select statement: selecionar declaração:
+
+ 
+select @@version select @ @ version
+
+
+ xp_dirtree xp_dirtree 
+
+This extended stored procedure can be used to get the list of all Este procedimento armazenado estendido pode ser usado para obter a lista de todos
+subdirectories for the passed directory. subdiretórios para o diretório passado.
+To get all subdirectories for the C:\MSSQL7 directory, run Para obter todos os subdiretórios para o C: \ MSSQL7 diretório, execute
+
+ 
+EXEC master..xp_dirtree 'C:\MSSQL7' EXEC master .. xp_dirtree 'C: \ MSSQL7'
+
+
+Here is the result set from my machine: Aqui está o conjunto de resultados da minha máquina:
+
+ 
+subdirectory depth profundidade subdiretório
+------------- ----------- ------------------------
+Binn 1 Binn 1
+Resources 2 Recursos 2
+1033 3 1033 3
+DevTools 1 DevTools 1
+Include 2 Incluir 2
+Lib 2 Lib 2
+Data 1 Dados 1
+Install 1 Instale um
+HTML 1 HTML 1
+Books 1 Livros 1
+LOG 1 LOG 1
+JOBS 1 Empregos 1
+BACKUP 1 BACKUP 1
+REPLDATA 1 REPLDATA 1
+FTP 2 FTP 2
+
+
+ xp_enum_oledb_providers xp_enum_oledb_providers 
+
+This extended stored procedure can be used to get the list of all Este procedimento armazenado estendido pode ser usado para obter a lista de todos
+OLE DB providers. Provedores OLE DB. The xp_enum_oledb_providers returns Provider Name, Os xp_enum_oledb_providers retorna Nome do Provedor,
+Parse Name and Provider Description. Analisa Nome e Descrição Provider.
+To get the list of all OLE DB providers, run Para obter a lista de todos os provedores OLE DB, execute
+
+ 
+EXEC master..xp_enum_oledb_providers Exec master .. xp_enum_oledb_providers
+
+
+ xp_enumcodepages xp_enumcodepages 
+
+This extended stored procedure can be used to get the list of all Este procedimento armazenado estendido pode ser usado para obter a lista de todos
+code pages, character sets and their description. páginas de código, conjuntos de caracteres e sua descrição.
+This is the example: Este é o exemplo:
+
+ 
+EXEC master..xp_enumcodepages Exec master .. xp_enumcodepages
+
+
+ xp_enumdsn xp_enumdsn 
+
+This extended stored procedure returns the list of all System DSNs Este procedimento armazenado estendido retorna a lista de todos Sistema DSN
+and their description. e sua descrição.
+To get the list of System DSNs, run: Para obter a lista de DSN do sistema, execute:
+
+ 
+EXEC master..xp_enumdsn EXEC master .. xp_enumdsn
+
+
+ xp_enumerrorlogs xp_enumerrorlogs 
+
+This extended stored procedure returns the list of all error logs Este procedimento armazenado estendido retorna a lista de todos os logs de erros
+with the last change date. com a data da última alteração.
+To get the list of error logs, run: Para obter a lista de logs de erro, execute:
+
+ 
+EXEC master..xp_enumerrorlogs Exec master .. xp_enumerrorlogs
+
+
+Here is the result set from my machine: Aqui está o conjunto de resultados da minha máquina:
+
+ 
+Archive # Date Archive # Data
+----------- ------------------ -----------------------------
+6 02/27/2001 08:00 6 2001/02/27 08:00
+5 03/04/2001 22:46 5 03/04/2001 22:46
+4 03/05/2001 22:28 4 03/05/2001 22:28
+3 03/08/2001 10:32 3 03/08/2001 10:32
+2 03/10/2001 00:06 2 03/10/2001 00:06
+1 03/10/2001 23:29 1 03/10/2001 23:29
+0 03/11/2001 18:58 0 03/11/2001 18:58
+
+
+ xp_enumgroups xp_enumgroups 
+
+This extended stored procedure returns the list of Windows NT groups Este procedimento armazenado estendido retorna a lista de grupos do Windows NT
+and their description. e sua descrição.
+To get the list of the Windows NT groups, run: Para obter a lista dos grupos do Windows NT, execute:
+
+ 
+EXEC master..xp_enumgroups Exec master .. xp_enumgroups
+
+
+ xp_fileexist xp_fileexist 
+
+You can use this extended stored procedure to determine whether the Você pode usar esse procedimento armazenado estendido para determinar se o
+particular file exists on the disk or not. determinado arquivo existe no disco ou não.
+
+Syntax: Sintaxe:
+
+ 
+EXECUTE xp_fileexist filename [, file_exists INT OUTPUT] EXECUTAR nome xp_fileexist [file_exists INT OUTPUT]
+
+
+To check whether the file boot.ini exists on the disk c: or not, run: Para verificar se o arquivo boot.ini existe no disco c: ou não, execute:
+
+ 
+EXEC master..xp_fileexist 'c:\boot.ini' EXEC master .. xp_fileexist 'c: \ boot.ini "
+
+
+Here is the result set from my machine: Aqui está o conjunto de resultados da minha máquina:
+
+ 
+File Exists File is a Directory Parent Directory Exists Arquivo Existe arquivo é um diretório pai diretório existe
+----------- ------------------- ----------------------- -------------------------------------------------- ---
+1 0 1 1 0 1
+
+
+ xp_fixeddrives xp_fixeddrives 
+
+This very useful extended stored procedure returns the list of all Esse procedimento armazenado estendido muito útil retorna a lista de todos
+fixed hard drives and the amount free space in Mb for each hard drive. fixo discos rígidos e espaço livre em quantidade Mb para cada disco rígido.
+
+This is the example: Este é o exemplo:
+
+ 
+EXEC master..xp_fixeddrives Exec master .. xp_fixeddrives
+
+
+Here is the result set from my machine: Aqui está o conjunto de resultados da minha máquina:
+
+ 
+drive MB free conduzir MB livres
+----- ----------- ----------------
+C 12082 C 12082
+D 396 D 396
+E 793 E 793
+F 46 F 46
+
+
+ xp_getnetname xp_getnetname 
+
+This extended stored procedure returns the WINS name of the SQL Server Este procedimento armazenado estendido retorna o nome WINS do SQL Server
+that you're connected to. que você está conectado.
+
+This is the example: Este é o exemplo:
+
+ 
+EXEC master..xp_getnetname EXEC master .. xp_getnetname
+
+
+Here is the result set from my machine: Aqui está o conjunto de resultados da minha máquina:
+
+ 
+Server Net Name --------------- CHIGRIK Nome do Servidor Net --------------- CHIGRIK 
+ xp_readerrorlog xp_readerrorlog 
+ This extended stored procedure returns the content of the errorlog file. Este procedimento armazenado estendido retorna o conteúdo do arquivo de log de erros. You can find this errorlog file in the C:\MSSQL7\Log directory, by default. Você pode encontrar esse arquivo de log de erros no diretório C: \ MSSQL7 \ Log, por padrão. To see the text of the errorlog file, run: Para ver o texto do arquivo de log de erros, execute: 
+EXEC master..xp_readerrorlog EXEC master .. xp_readerrorlog
+ xp_regdeletekey xp_regdeletekey 
+ This extended stored procedure will delete the whole key from the registry. Este procedimento armazenado estendido irá apagar toda a chave do registro. You should use it very carefully. Você deve usá-lo com muito cuidado. Syntax: Sintaxe: 
+EXECUTE xp_regdeletekey [@rootkey=]'rootkey', EXECUTAR xp_regdeletekey [@ RootKey =] 'RootKey',
+                        [@key=]'key' [@ = Chave] "chave"
+ To delete key 'SOFTWARE\Test' from the 'HKEY_LOCAL_MACHINE', run: Para excluir a chave 'SOFTWARE \ Test "do" HKEY_LOCAL_MACHINE ", execute: 
+EXEC master..xp_regdeletekey EXEC master .. xp_regdeletekey
+     @rootkey='HKEY_LOCAL_MACHINE', @ RootKey = 'HKEY_LOCAL_MACHINE',
+     @key='SOFTWARE\Test' @ =-chave "SOFTWARE \ Test '
+ xp_regdeletevalue xp_regdeletevalue 
+ This extended stored procedure will delete the particular value for the key from the registry. Este procedimento armazenado estendido irá apagar o valor específico para a chave do registro. You should use it very carefully. Você deve usá-lo com muito cuidado. Syntax: Sintaxe: 
+EXECUTE xp_regdeletevalue [@rootkey=]'rootkey', EXECUTAR xp_regdeletevalue [@ RootKey =] 'RootKey',
+                          [@key=]'key', [@ = Chave] "chave",
+                          [@value_name=]'value_name' [@ Value_name =] 'value_name'
+ To delete value 'TestValue' for the key 'SOFTWARE\Test' from the 'HKEY_LOCAL_MACHINE', run: Para excluir o valor 'TestValue' para a chave 'SOFTWARE \ Test "do" HKEY_LOCAL_MACHINE ", execute: 
+EXEC master..xp_regdeletevalue EXEC master .. xp_regdeletevalue
+     @rootkey='HKEY_LOCAL_MACHINE', @ RootKey = 'HKEY_LOCAL_MACHINE',
+     @key='SOFTWARE\Test', @ Key = "SOFTWARE \ Test ',
+     @value_name='TestValue' @ Value_name = 'TestValue'
+ xp_regread Xp_regread 
+ This extended stored procedure is used to read from the registry. Este procedimento armazenado estendido é usado para ler a partir do registro. Syntax: Sintaxe: 
+EXECUTE xp_regread [@rootkey=]'rootkey', EXECUTAR Xp_regread [@ RootKey =] 'RootKey',
+                   [@key=]'key' [@ = Chave] "chave"
+                   [, [@value_name=]'value_name'] [[@ Value_name =] 'value_name']
+                   [, [@value=]@value OUTPUT] [[@ Value =] @ value OUTPUT]
+ To read into variable @test from the value 'TestValue' from the key 'SOFTWARE\Test' from the 'HKEY_LOCAL_MACHINE', run: Para ler a variável @ teste a partir do valor 'TestValue' da chave 'SOFTWARE \ Test "do" HKEY_LOCAL_MACHINE ", execute: 
+DECLARE @test varchar(20) DECLARE @ teste varchar (20)
+EXEC master..xp_regread @rootkey='HKEY_LOCAL_MACHINE', EXEC master .. Xp_regread @ RootKey = 'HKEY_LOCAL_MACHINE',
+  @key='SOFTWARE\Test', @ Key = "SOFTWARE \ Test ',
+  @value_name='TestValue', @ Value_name = 'TestValue',
+  @value=@test OUTPUT @ Value = SAÍDA @ test
+SELECT @test @ Test SELECIONAR
+ Here is the result set from my machine: Aqui está o conjunto de resultados da minha máquina: 
+-------------------- --------------------
+Test Teste
+ xp_regwrite xp_regwrite 
+ This extended stored procedure is used to write in the registry. Este procedimento armazenado estendido é usado para gravar no registro. Syntax: Sintaxe: 
+EXECUTE xp_regwrite [@rootkey=]'rootkey', EXECUTAR xp_regwrite [@ RootKey =] 'RootKey',
+                    [@key=]'key', [@ = Chave] "chave",
+                    [@value_name=]'value_name', [@ Value_name =] 'value_name',
+                    [@type=]'type', [@ Type =] 'tipo',
+                    [@value=]'value' [@ Value =] 'value'
+ To write the variable 'Test' in value 'TestValue', key 'SOFTWARE\Test', 'HKEY_LOCAL_MACHINE', run: Para escrever a variável 'Test' de valor 'TestValue ", tecla" SOFTWARE \ Test', 'HKEY_LOCAL_MACHINE', execute: 
+EXEC master..xp_regwrite EXEC master .. xp_regwrite
+     @rootkey='HKEY_LOCAL_MACHINE', @ RootKey = 'HKEY_LOCAL_MACHINE',
+     @key='SOFTWARE\Test', @ Key = "SOFTWARE \ Test ',
+     @value_name='TestValue', @ Value_name = 'TestValue',
+     @type='REG_SZ', @ Type = 'REG_SZ ",
+     @value='Test' @ Value = 'Test'
+ xp_subdirs xp_subdirs 
+ This extended stored procedure is used to get the list of subdirectories for the passed directory. Este procedimento armazenado estendido é utilizado para obter a lista de subdiretórios para o diretório passado. In comparison with xp_dirtree, xp_subdirs returns only those directories whose depth = 1. This is the example: Em comparação com xp_dirtree, xp_subdirs retorna apenas os diretórios cujos profundidade = 1 Este é o exemplo.: 
+EXEC master..xp_subdirs 'C:\MSSQL7' EXEC master .. 'C: \ MSSQL7' xp_subdirs
+ Here is the result set from my machine: Aqui está o conjunto de resultados da minha máquina: 
+subdirectory subdiretório
+----------------------- -----------------------
+Binn Binn
+DevTools DevTools
+Data Dados
+Install Instalar
+HTML HTML
+Books Livros
+LOG LOG
+JOBS JOBS
+BACKUP BACKUP
+REPLDATA REPLDATA
+

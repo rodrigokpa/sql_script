@@ -1,0 +1,14 @@
+CREATE FUNCTION [dbo].[fnCalculaIdade](@dataNascimento datetime, @dataAtual datetime)
+RETURNS INT
+
+AS
+
+BEGIN
+	DECLARE @IDADE INT
+	SET @IDADE = case when  (datepart(month,@dataNascimento) = datepart(month,@dataAtual) and
+							 datepart(day,@dataNascimento) > datepart(day,@dataAtual)
+							) then (datediff(month,@dataNascimento,@dataAtual)/12)-1
+							  else datediff(month,@dataNascimento,@dataAtual)/12
+				 end
+	RETURN @IDADE
+END

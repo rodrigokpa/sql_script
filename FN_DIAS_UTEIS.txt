@@ -1,0 +1,66 @@
+CREATE FUNCTION [dbo].[FN_DIAS_UTEIS]
+
+( @DATA_INI DATETIME , @DATA_FIM DATETIME )
+
+/*
+Criação: 2012-07-02 
+Por: Ricardo Duarte
+Descrição: Rotina para calcular a quantidade de dias uteis entre duas datas, só desconta os finais de semana.
+           Acrescentamos a rotina dbo.uFC_FERIADOS_NACIONAIS, desenvolvida pelo Fábio, que desconta os feriados que ocorrem nos dias uteis. 
+*/
+
+RETURNS INT 
+
+AS BEGIN 
+
+   DECLARE 
+      @QTDE_DIA AS INT , 
+      @DIA_SEMANA_INI AS INT , 
+      @DIA_SEMANA_FIM AS INT , 
+      @DIA_SEMANA_INI_AJUSTADO AS INT , 
+      @DIA_SEMANA_FIM_AJUSTADO AS INT 
+
+-- TESTA OS PARAMETROS DE ENTRADA E DEVOLVE UM ERRO CASO AS DATAS NÃO ESTEJAM EM ORDEM 
+   IF @DATA_INI > @DATA_FIM BEGIN
+
+      SELECT @QTDE_DIA = CAST( 'Data Inicial maior que Final!' AS INT) 
+      RETURN -1 
+
+   END
+
+-- GUARDA O DIA DA SEMANA DAS DATAS
+   SELECT 
+      @DIA_SEMANA_INI = DATEPART( WEEKDAY , @DATA_INI ) , 
+      @DIA_SEMANA_FIM = DATEPART( WEEKDAY , @DATA_FIM ) 
+
+-- CALCULA OS DIAS DA SEMANA COM BASE NA SEGUNDA-FEIRA SENDO O DIA 0
+   SELECT 
+      @DIA_SEMANA_INI_AJUSTADO = CASE WHEN @DIA_SEMANA_INI - 2 <= 0 THEN 0 ELSE @DIA_SEMANA_INI - 2 END , 
+      @DIA_SEMANA_FIM_AJUSTADO = CASE WHEN @DIA_SEMANA_FIM - 2 <= 0 THEN 0 ELSE @DIA_SEMANA_FIM - 2 END 
+
+   SELECT @QTDE_DIA = 
+-- QUANTIDADE DE SEMANAS INTEIRAS ENTRE AS DATAS * 5 CALCULA OS DIAS UTEIS DAS SEMANAS CHEIAS
+      ( ( DATEDIFF( DAY , @DATA_INI , @DATA_FIM  ) / 7 )  * 5 ) + 
+-- CALCULA OS DIAS A MAIS DA SEMANA FINAL QUANDO NÃO COMPLETA 7 DIAS
+         CASE WHEN @DIA_SEMANA_FIM_AJUSTADO - @DIA_SEMANA_INI_AJUSTADO < 0 
+                                 THEN 5 + @DIA_SEMANA_FIM_AJUSTADO - @DIA_SEMANA_INI_AJUSTADO 
+                                 ELSE @DIA_SEMANA_FIM_AJUSTADO - @DIA_SEMANA_INI_AJUSTADO 
+                              END  
+-- AJUSTE FEITO PARA QUANDO O INICIO É SEGUNDA-FEIRA E O FINAL É DOMINGO
+      + CASE WHEN @DIA_SEMANA_INI = 2 AND @DIA_SEMANA_FIM = 1 THEN 5 ELSE 0 END 
+
+-- Aqui descontaremos o número de feriados que ocorrem no período
+   SELECT @QTDE_DIA = @QTDE_DIA - dbo.uFC_FERIADOS_NACIONAIS( @DATA_INI , @DATA_FIM ) 
+
+/*
+Há alguns casos em que os feriados são pontos facultativos ou são municipais e estaduais. 
+Caso as datas de inicial e final ocorram nestes feriados é possível que a conta fique negativa, não caracterizando erro.
+Na verdade não poderemos considerar que há dias úteis entre estas datas, por isso retornamos o valor zero.
+*/
+   IF @QTDE_DIA < 0 
+      SELECT @QTDE_DIA = 0
+
+   RETURN @QTDE_DIA 
+
+END
+
